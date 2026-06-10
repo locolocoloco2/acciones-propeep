@@ -272,7 +272,7 @@ const _A = '""" + API_XOR + """';
 const _S = '""" + SID_XOR + """';
 
 function _xd(b64, k){ try{ return atob(b64).split('').map(c=>String.fromCharCode(c.charCodeAt(0)^k)).join(''); }catch(e){return '';} }
-function _getUsers(){ try{ return JSON.parse(atob(_U)); }catch(e){return [];} }
+function _getUsers(){ try{ return JSON.parse(decodeURIComponent(atob(_U).split('').map(c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0')).join(''))); }catch(e){return [];} }
 function _getApi(){ return _xd(_A, 42); }
 function _getSid(){ return _xd(_S, 42); }
 
@@ -1085,8 +1085,7 @@ function renderResumen(){
     const mesNeto = mesMontoPos - mesMontoNeg;
 
     html += '<div class="mes-card">';
-    html += '<div class="mes-header" onclick="toggleMes('mes-'+mes+'')">';
-    html += '<h3>'+MESES[mes-1]+'</h3>';
+    html += '<div class="mes-header" onclick="toggleMes(\'mes-'+mes+'\')">';
     html += '<div class="mes-totales">';
     html += '<span>Total: <strong>'+mesTotal+' acciones</strong></span>';
     html += '<span class="monto-pos">▲ '+mesPos+' | RD$'+mesMontoPos.toLocaleString('es-DO')+'</span>';
