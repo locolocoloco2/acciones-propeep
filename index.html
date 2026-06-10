@@ -268,10 +268,10 @@ tr:nth-child(even) td{background:var(--gris);}
 // CREDENCIALES ENCRIPTADAS
 // ══════════════════════════════════════════
 const _U = 'W3siY2VkdWxhIjogIjIyMzAxMjU1NjA0IiwgIm5vbWJyZSI6ICJWaWN0b3IgTWFudWVsIFBlw7FhIE1hdG9zIiwgInJvbCI6ICJhZG1pbiJ9LCB7ImNlZHVsYSI6ICI0MDIyNjU2MzU1NSIsICJub21icmUiOiAiQ2FybG9zIEFuZHJlcyBBbG1hbnphciBQZXJleiIsICJyb2wiOiAiYWRtaW4ifSwgeyJjZWR1bGEiOiAiMDU2MDE2MzE5MzkiLCAibm9tYnJlIjogIkFsZWlkeSBDYXJvbGluIFJvc2FyaW8gUm9zYXJpbyIsICJyb2wiOiAidmFjcGVybSJ9LCB7ImNlZHVsYSI6ICIwMDEwMTQ1ODM4OCIsICJub21icmUiOiAiUGVkcm8gQW50b25pbyBDaWQgTWFydGluZXoiLCAicm9sIjogInJlYWRvbmx5In1d';
-const _A = '""" + API_XOR + """';
-const _S = '""" + SID_XOR + """';
+const _A = 'a2NQS3lTa11zbGN+TGl/Em5QbB1pQEFDW3xgflJBGXAceH5HGBxB';
+const _S = 'G0kdYUJpGF8YXW5MexlbX2AbbxxBe39tYXweY35dSVtyb11OBxlMR114Sxo=';
 
-function _xd(b64, k){ try{ return atob(b64).split('').map(c=>String.fromCharCode(c.charCodeAt(0)^k)).join(''); }catch(e){return '';} }
+function _xd(b64, k){ try{ const bin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0)); return Array.from(bin).map(b=>String.fromCharCode(b^k)).join(''); }catch(e){console.warn('_xd error',e);return '';} }
 function _getUsers(){ try{ return JSON.parse(decodeURIComponent(atob(_U).split('').map(c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0')).join(''))); }catch(e){return [];} }
 function _getApi(){ return _xd(_A, 42); }
 function _getSid(){ return _xd(_S, 42); }
@@ -350,12 +350,12 @@ function applyRoleUI(){
       sel.innerHTML += '<option value="'+y+'"'+(y===yr?' selected':'')+'>'+y+'</option>';
     }
   } else if(rol === 'vacperm'){
-    // Aleidy: hide form and lote, show only hist (filtered)
-    tabForm.style.display = 'none';
+    // Aleidy: hide lote, show form and hist
     tabLote.style.display = 'none';
-    tabHist.classList.add('active');
-    document.getElementById('panel-hist').classList.add('active');
-    document.getElementById('panel-form').classList.remove('active');
+    tabForm.style.display = '';
+    tabForm.classList.add('active');
+    document.getElementById('panel-form').classList.add('active');
+    document.getElementById('panel-hist').classList.remove('active');
   } else {
     // admin: all tabs visible
     tabForm.style.display = '';
