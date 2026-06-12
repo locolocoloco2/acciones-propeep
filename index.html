@@ -419,7 +419,7 @@ footer .footer-dev{color:rgba(255,255,255,.3);font-size:9.5px;margin-top:5px;let
       <div class="card-title"><span class="badge">TIPO</span> Tipo de Certificación</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
         <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;cursor:pointer;background:var(--gris);padding:9px 16px;border-radius:7px;border:2px solid transparent" id="tipo-laboro-lbl">
-          <input type="radio" name="cert-tipo" value="laboro" checked onchange="onTipoCert()" style="accent-color:var(--azul);width:14px;height:14px"> Carta de Laboro
+          <input type="radio" name="cert-tipo" value="labora" checked onchange="onTipoCert()" style="accent-color:var(--azul);width:14px;height:14px"> Carta de Labora
         </label>
         <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;cursor:pointer;background:var(--gris);padding:9px 16px;border-radius:7px;border:2px solid transparent" id="tipo-consular-lbl">
           <input type="radio" name="cert-tipo" value="consular" onchange="onTipoCert()" style="accent-color:var(--azul);width:14px;height:14px"> Carta Consular
@@ -452,7 +452,7 @@ footer .footer-dev{color:rgba(255,255,255,.3);font-size:9.5px;margin-top:5px;let
         <textarea id="ce-obs" rows="2" placeholder="Texto adicional que aparecerá en la certificación..."></textarea>
       </div>
       <div class="grid2">
-        <div><label>Firmante</label><input type="text" id="ce-firmante" value="Directora de Recursos Humanos"></div>
+        <div><label>Firmante</label><input type="text" id="ce-firmante" value="Joney R. Dotel Coll"></div>
         <div><label>Fecha del documento</label><input type="text" id="ce-fecha-doc" placeholder="DD/MM/AAAA"></div>
       </div>
     </div>
@@ -473,7 +473,7 @@ footer .footer-dev{color:rgba(255,255,255,.3);font-size:9.5px;margin-top:5px;let
       <input type="text" id="certhist-search" placeholder="Buscar por empleado, cédula o emisor..." oninput="renderCertHist()">
       <select id="certhist-tipo" onchange="renderCertHist()">
         <option value="">Todos los tipos</option>
-        <option value="laboro">Carta de Laboro</option>
+        <option value="labora">Carta de Labora</option>
         <option value="consular">Carta Consular</option>
         <option value="desvinculacion">Desvinculación</option>
       </select>
@@ -537,7 +537,44 @@ footer .footer-dev{color:rgba(255,255,255,.3);font-size:9.5px;margin-top:5px;let
 <!-- ISR PANEL -->
 <div id="panel-isr" class="panel">
   <div class="card">
-    <div class="card-title">Calculadora ISR RD — Retenciones Asalariados</div>
+    <div class="card-title">Cálculo Individual — Consulta Rápida</div>
+    <div class="grid2">
+      <div>
+        <label>Sueldo Mensual (RD$)</label>
+        <input type="number" id="isr-ind-sueldo" placeholder="0.00" min="0" step="any" oninput="isrCalcIndividual()">
+      </div>
+      <div>
+        <label>Incentivo (RD$)</label>
+        <input type="number" id="isr-ind-incentivo" placeholder="0.00" min="0" step="any" oninput="isrCalcIndividual()">
+      </div>
+    </div>
+    <div id="isr-ind-result" style="display:none;margin-top:18px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--gris);border:1px solid var(--gris2);border-radius:var(--radio);padding:13px 15px">
+          <div style="font-size:9px;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">TSS (AFP + ARS)</div>
+          <div id="isr-ind-tss" style="font-size:16px;font-weight:600;color:#9e1b32;font-variant-numeric:tabular-nums">—</div>
+        </div>
+        <div style="background:var(--gris);border:1px solid var(--gris2);border-radius:var(--radio);padding:13px 15px">
+          <div style="font-size:9px;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">ISR Sueldo</div>
+          <div id="isr-ind-isrs" style="font-size:16px;font-weight:600;color:#9e1b32;font-variant-numeric:tabular-nums">—</div>
+        </div>
+        <div style="background:var(--gris);border:1px solid var(--gris2);border-radius:var(--radio);padding:13px 15px">
+          <div style="font-size:9px;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">ISR Incentivo</div>
+          <div id="isr-ind-isri" style="font-size:16px;font-weight:600;color:#9e1b32;font-variant-numeric:tabular-nums">—</div>
+        </div>
+        <div style="background:var(--azul-claro);border:1px solid var(--borde);border-radius:var(--radio);padding:13px 15px">
+          <div style="font-size:9px;font-weight:700;color:var(--azul);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Total Retenciones</div>
+          <div id="isr-ind-ret" style="font-size:16px;font-weight:600;color:var(--azul);font-variant-numeric:tabular-nums">—</div>
+        </div>
+        <div style="background:#eef7f1;border:1px solid rgba(30,107,60,.2);border-radius:var(--radio);padding:13px 15px">
+          <div style="font-size:9px;font-weight:700;color:#1e6b3c;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Neto a Recibir</div>
+          <div id="isr-ind-neto" style="font-size:16px;font-weight:700;color:#1e6b3c;font-variant-numeric:tabular-nums">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Cálculo Masivo — Retenciones Asalariados</div>
     <div class="tinfo">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <div>Carga un Excel con columnas: <strong>ID, CEDULA, NOMBRE, CARGO, DEPARTAMENTO, SUELDO, INCENTIVO</strong>. Se calculan TSS, ISR y netos automáticamente.
@@ -917,7 +954,7 @@ function renderHist(){
 
   const filtered = base.filter(function(r){
     const nombre = (r.nombre_empleado||'').toLowerCase();
-    const cedula = (r.cedula_empleado||'').toLowerCase();
+    const cedula = ((r.cedula_empleado||'')+' '+fmtCed(r.cedula_empleado)).toLowerCase();
     const est = r.estado||'Creada';
     if(estFilt && est !== estFilt) return false;
     if(search && nombre.indexOf(search)<0 && cedula.indexOf(search)<0) return false;
@@ -948,7 +985,7 @@ function renderHist(){
     html += '<td>'+(r.fecha_generacion||'—')+'</td>';
     html += '<td>'+(r.generado_por||'—')+'</td>';
     html += '<td><strong>'+(r.nombre_empleado||'—')+'</strong></td>';
-    html += '<td>'+(r.cedula_empleado||'—')+'</td>';
+    html += '<td>'+(fmtCed(r.cedula_empleado)||'—')+'</td>';
     html += '<td>'+(r.cargo||'—')+'</td>';
     html += '<td>'+(r.naturaleza||'—')+'</td>';
     html += '<td><span class="est-badge est-'+estClass+'" id="badge-'+r.id+'">'+est+'</span></td>';
@@ -1085,6 +1122,12 @@ async function registrarAccion(d){
 // ══════════════════════════════════════════
 // DATE UTILS
 // ══════════════════════════════════════════
+function fmtCed(c){
+  const d = String(c||'').replace(/[^0-9]/g,'');
+  if(d.length === 11) return d.slice(0,3)+'-'+d.slice(3,10)+'-'+d.slice(10);
+  return String(c||'').trim();
+}
+
 function fmtDate(v){
   if(!v) return '';
   const p=v.split('-');
@@ -1171,7 +1214,7 @@ function buildPage(doc, d) {
   y = drawRow('2. NOMBRE (S) Y APELLIDO(S) DEL EMPLEADO:',(d.nombre||'').toUpperCase(),true,'3. FECHA:',d.fecha||'',false,y);
   y = drawRow('4. CARGO QUE DESEMPEÑA:',(d.cargo||'').toUpperCase(),true,'5. SUELDO:',d.sueldo||'',false,y);
   y = drawRow('6. SUPERIOR INMEDIATO:',(d.superior||'').toUpperCase(),false,'7. FECHA DE INGRESO:',d.fecha_ingreso||'',false,y);
-  y = drawRow('8. UNIDAD DE TRABAJO:',(d.unidad||'').toUpperCase(),false,'9. CEDULA:',d.cedula||'',true,y);
+  y = drawRow('8. UNIDAD DE TRABAJO:',(d.unidad||'').toUpperCase(),false,'9. CEDULA:',fmtCed(d.cedula),true,y);
   y = row1('10. TIEMPO EN LA ADM. PUBLICA.:',d.tiempo_adm||'',y);
   y += 2;
   y = secHdr('B. NATURALEZA DE LA ACCION', y);
@@ -1490,7 +1533,7 @@ function renderResumen(){
       const est = r.estado||'Creada';
       html += '<tr>';
       html += '<td><strong>'+(r.nombre_empleado||'—')+'</strong></td>';
-      html += '<td>'+(r.cedula_empleado||'—')+'</td>';
+      html += '<td>'+(fmtCed(r.cedula_empleado)||'—')+'</td>';
       html += '<td>'+(r.cargo||'—')+'</td>';
       html += '<td>'+(r.sueldo||'—')+'</td>';
       html += '<td>'+(r.naturaleza||'—')+'</td>';
@@ -2808,12 +2851,12 @@ function buscarEmpleado(){
   const sug = document.getElementById('cert-sugerencias');
   if(q.length < 2){ sug.innerHTML=''; return; }
   const found = NOMINA.filter(function(e){
-    return e.cedula.indexOf(q)>=0 || e.nombre.toLowerCase().indexOf(q)>=0;
+    const qd=q.replace(/[^0-9]/g,''); return (qd && e.cedula.indexOf(qd)>=0) || e.nombre.toLowerCase().indexOf(q)>=0;
   }).slice(0,8);
   if(!found.length){ sug.innerHTML='<div class="cert-sug"><div class="cert-sug-item" style="color:#9e1b32">No se encontró ningún empleado</div></div>'; return; }
   let html = '<div class="cert-sug">';
   found.forEach(function(e){
-    html += '<div class="cert-sug-item" onclick="seleccionarEmpleado(&quot;'+e.cedula+'&quot;)"><strong>'+e.nombre+'</strong><span>'+e.cedula+' &middot; '+e.puesto+'</span></div>';
+    html += '<div class="cert-sug-item" onclick="seleccionarEmpleado(&quot;'+e.cedula+'&quot;)"><strong>'+e.nombre+'</strong><span>'+fmtCed(e.cedula)+' &middot; '+e.puesto+'</span></div>';
   });
   html += '</div>';
   sug.innerHTML = html;
@@ -2825,7 +2868,7 @@ function seleccionarEmpleado(cedula){
   document.getElementById('cert-buscar').value = e.nombre;
   document.getElementById('cert-sugerencias').innerHTML = '';
   document.getElementById('ce-nombre').value = e.nombre;
-  document.getElementById('ce-cedula').value = e.cedula;
+  document.getElementById('ce-cedula').value = fmtCed(e.cedula);
   document.getElementById('ce-cargo').value = e.puesto;
   document.getElementById('ce-depto').value = e.departamento;
   document.getElementById('ce-sueldo').value = 'RD$ '+Number(e.sueldo).toLocaleString('es-DO')+'.00';
@@ -2845,9 +2888,9 @@ function limpiarCert(){
   ['ce-nombre','ce-cedula','ce-cargo','ce-depto','ce-sueldo','ce-ingreso','ce-grupo',
    'ce-pais','ce-salida','ce-retorno','ce-motivo-viaje','ce-fecha-desv','ce-motivo-desv',
    'ce-obs','ce-fecha-doc'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('ce-firmante').value='Directora de Recursos Humanos';
+  document.getElementById('ce-firmante').value='Joney R. Dotel Coll';
   document.getElementById('st-cert').style.display='none';
-  document.querySelector('input[name="cert-tipo"][value="laboro"]').checked=true;
+  document.querySelector('input[name="cert-tipo"][value="labora"]').checked=true;
   onTipoCert();
 }
 
@@ -2957,14 +3000,12 @@ function buildCertPDF(doc, d){
   doc.text('Proyectos Estratégicos', W/2, 36, {align:'center'});
   doc.text('y Especiales de la Presidencia', W/2, 41, {align:'center'});
 
-  // Línea separadora
-  doc.setDrawColor(...AZUL); doc.setLineWidth(0.4);
-  doc.line(ML, 45, W-MR, 45);
+
 
   let y = 0;
 
   // ════ CERTIFICACIÓN LABORAL / CONSULAR ════
-  if(d.tipo === 'laboro' || d.tipo === 'consular'){
+  if(d.tipo === 'labora' || d.tipo === 'laboro' || d.tipo === 'consular'){
 
     // Título
     y = 62;
@@ -2983,7 +3024,7 @@ function buildCertPDF(doc, d){
     const retenciones = Math.round((tss + isr)*12*100)/100;
 
     let parrafo1 = '';
-    if(d.tipo === 'laboro'){
+    if(d.tipo === 'labora' || d.tipo === 'laboro'){
       parrafo1 =
         'Por este medio se hace constar que ' + sr + ' ';
     } else {
@@ -2993,7 +3034,7 @@ function buildCertPDF(doc, d){
 
     // Escribir párrafo con nombre en negrita
     const nombreUpper = (d.nombre||'').toUpperCase();
-    const cedulaFmt = d.cedula||'';
+    const cedulaFmt = fmtCed(d.cedula);
     const cargoUpper = (d.cargo||'').toUpperCase();
     const deptUpper = (d.departamento||'').toUpperCase();
 
@@ -3039,7 +3080,10 @@ function buildCertPDF(doc, d){
           totalW += doc.getTextWidth(item.text);
         });
         const spaces = line.length-1;
-        const extraSpace = isLast ? 2 : (spaces>0 ? (maxW-totalW)/spaces : 2);
+        // espacio natural de Times 11pt — la última línea no se justifica
+        doc.setFont('times','normal'); doc.setFontSize(11);
+        const natSp = doc.getTextWidth(' ');
+        const extraSpace = isLast ? natSp : (spaces>0 ? Math.max(natSp, (maxW-totalW)/spaces) : natSp);
         line.forEach(function(item, idx){
           doc.setFont('times', item.bold?'bold':'normal');
           doc.setFontSize(11);
@@ -3054,7 +3098,7 @@ function buildCertPDF(doc, d){
 
     const lineH = 6.5;
 
-    if(d.tipo === 'laboro'){
+    if(d.tipo === 'labora' || d.tipo === 'laboro'){
       // Párrafo 1
       y = writeJustified(doc, [
         {text:'Por este medio se hace constar que '+sr+' ', bold:false},
@@ -3097,24 +3141,24 @@ function buildCertPDF(doc, d){
       ], ML, y, ANC, lineH);
     }
 
-    // Firma
+    // Firma — bloque centrado
     y += 18;
     setTimes('normal', 11); doc.setTextColor(...NEGRO);
-    doc.text('Atentamente,', W/2+10, y, {align:'center'});
-    y += 20;
+    doc.text('Atentamente,', W/2, y, {align:'center'});
+    y += 22;
     doc.setLineWidth(0.5); doc.setDrawColor(...NEGRO);
-    doc.line(W/2-10, y, W/2+40, y);
-    y += 5;
+    doc.line(W/2-34, y, W/2+34, y);
+    y += 5.5;
     setTimes('bold', 11);
-    doc.text(d.firmante||'Joney R. Dotel Coll', W/2+15, y, {align:'center'});
-    y += 5;
+    doc.text(d.firmante||'Joney R. Dotel Coll', W/2, y, {align:'center'});
+    y += 5.5;
     setTimes('normal', 10);
-    doc.text('Directora de Recursos Humanos', W/2+15, y, {align:'center'});
+    doc.text('Directora de Recursos Humanos', W/2, y, {align:'center'});
 
-    // DRH/ca
+    // Referencia DRH
     y += 14;
     setTimes('normal', 10); doc.setTextColor(80,80,80);
-    doc.text('DRH/ca', ML, y);
+    doc.text(drhRef(), ML, y);
 
   // ════ DESVINCULACIÓN ════
   } else if(d.tipo === 'desvinculacion'){
@@ -3181,27 +3225,89 @@ function buildCertPDF(doc, d){
     setTimes('normal', 10);
     doc.text('Directora de Recursos Humanos', ML, y);
     y += 5;
-    doc.text('DRH/ca', ML, y);
+    doc.text(drhRef(), ML, y);
   }
 
-  // ─── FOOTER ───
-  const fy = H - 12;
+  // ─── FOOTER con iconos vectoriales ───
+  const fy = H - 11;
   doc.setDrawColor(...AZUL); doc.setLineWidth(0.5);
-  doc.line(ML, fy-4, W-MR, fy-4);
-  setTimes('normal', 7); doc.setTextColor(100,100,100);
-  // Five footer items equally spaced
+  doc.line(ML, fy-5.5, W-MR, fy-5.5);
+
+  // Dibuja cada icono dentro de un círculo (estilo membrete oficial)
+  function iconCircle(cx, cy){
+    doc.setDrawColor(...AZUL); doc.setLineWidth(0.35);
+    doc.circle(cx, cy, 2.1, 'S');
+  }
+  function iconPin(cx, cy){
+    iconCircle(cx, cy);
+    doc.setLineWidth(0.3);
+    doc.circle(cx, cy-0.35, 0.62, 'S');
+    doc.line(cx-0.55, cy-0.05, cx, cy+1.05);
+    doc.line(cx+0.55, cy-0.05, cx, cy+1.05);
+  }
+  function iconMail(cx, cy){
+    iconCircle(cx, cy);
+    doc.setLineWidth(0.3);
+    doc.rect(cx-1.05, cy-0.75, 2.1, 1.5, 'S');
+    doc.line(cx-1.05, cy-0.75, cx, cy+0.15);
+    doc.line(cx+1.05, cy-0.75, cx, cy+0.15);
+  }
+  function iconWeb(cx, cy){
+    iconCircle(cx, cy);
+    doc.setLineWidth(0.3);
+    doc.circle(cx, cy, 1.05, 'S');
+    doc.line(cx-1.05, cy, cx+1.05, cy);
+    doc.ellipse(cx, cy, 0.45, 1.05, 'S');
+  }
+  function iconPhone(cx, cy){
+    iconCircle(cx, cy);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(cx-0.62, cy-1.0, 1.24, 2.0, 0.25, 0.25, 'S');
+    doc.line(cx-0.25, cy+0.62, cx+0.25, cy+0.62);
+  }
+  function iconSocial(cx, cy){
+    iconCircle(cx, cy);
+    doc.setLineWidth(0.3);
+    doc.line(cx-0.75, cy, cx+0.7, cy-0.7);
+    doc.line(cx-0.75, cy, cx+0.7, cy+0.7);
+    doc.circle(cx-0.75, cy, 0.32, 'F');
+    doc.circle(cx+0.7, cy-0.7, 0.32, 'F');
+    doc.circle(cx+0.7, cy+0.7, 0.32, 'F');
+  }
+
   const footerItems = [
-    'Av. Mexico, esq. Leopoldo Navarro, Sto. Dgo.',
-    'info@propeep.gob.do',
-    'www.propeep.gob.do',
-    'Tel. 809 686 1800',
-    '@propeepgob',
+    {icon: iconPin,    txt: 'Av. Mexico, esq. Leopoldo\nNavarro, Sto. Dgo., R.D.'},
+    {icon: iconMail,   txt: 'info@propeep.gob.do'},
+    {icon: iconWeb,    txt: 'www.propeep.gob.do'},
+    {icon: iconPhone,  txt: '809 686 1800'},
+    {icon: iconSocial, txt: '@propeepgob'},
   ];
+  setTimes('normal', 6.5);
   const colW2 = ANC / footerItems.length;
-  footerItems.forEach(function(txt, i){
-    const fx = ML + i * colW2;
-    doc.text(txt, fx + colW2/2, fy, {align:'center', maxWidth: colW2-1});
+  footerItems.forEach(function(item, i){
+    const colCx = ML + i * colW2 + colW2/2;
+    const lines = item.txt.split('\n');
+    // ancho del texto = línea más larga
+    let textW = 0;
+    lines.forEach(function(ln){ textW = Math.max(textW, doc.getTextWidth(ln)); });
+    const iconW = 4.2, gap = 1.6;
+    const totalW = iconW + gap + textW;
+    const startX = colCx - totalW/2;
+    item.icon(startX + 2.1, fy - 0.6);
+    doc.setTextColor(90,90,90);
+    const ty = lines.length > 1 ? fy - 1.6 : fy + 0.4;
+    lines.forEach(function(ln, li){
+      doc.text(ln, startX + iconW + gap, ty + li*2.7);
+    });
   });
+}
+
+function drhRef(){
+  if(!SESSION || !SESSION.nombre) return 'DRH';
+  const p = SESSION.nombre.trim().split(/\s+/);
+  const apellido = p.length >= 3 ? p[2] : (p[1]||'');
+  const ini = (p[0].charAt(0) + (apellido.charAt(0)||'')).toLowerCase();
+  return 'DRH/' + ini;
 }
 
 function articuloDepto(depto){
@@ -3264,7 +3370,8 @@ async function generarCertificacion(){
   await sbInsertCert(d);
 
   // Update nomina if data was modified
-  const original = NOMINA.find(function(e){ return e.cedula===d.cedula; });
+  const _cedDig = String(d.cedula||'').replace(/[^0-9]/g,'');
+  const original = NOMINA.find(function(e){ return e.cedula===_cedDig; });
   if(original){
     const sueldoNum = parseFloat(String(d.sueldo).replace(/[^0-9.]/g,''))||0;
     if(original.nombre!==d.nombre || original.puesto!==d.cargo || original.departamento!==d.departamento || original.sueldo!==sueldoNum || original.fecha_ingreso!==d.fecha_ingreso){
@@ -3283,7 +3390,7 @@ async function generarCertificacion(){
 // CERTIFICACIONES EMITIDAS — HISTÓRICO
 // ══════════════════════════════════════════
 let certHistData = [];
-const CERT_TIPOS = {laboro:'Carta de Laboro', consular:'Carta Consular', desvinculacion:'Desvinculación'};
+const CERT_TIPOS = {labora:'Carta de Labora', laboro:'Carta de Labora', consular:'Carta Consular', desvinculacion:'Desvinculación'};
 
 async function loadCertHist(){
   const body = document.getElementById('certhist-body');
@@ -3299,9 +3406,10 @@ function certHistFiltered(){
   const q = (document.getElementById('certhist-search').value||'').toLowerCase();
   const tipo = document.getElementById('certhist-tipo').value;
   return certHistData.filter(function(r){
-    if(tipo && r.tipo !== tipo) return false;
+    const rTipo = r.tipo === 'laboro' ? 'labora' : r.tipo;
+    if(tipo && rTipo !== tipo) return false;
     if(q){
-      const blob = ((r.nombre_empleado||'')+' '+(r.cedula_empleado||'')+' '+(r.generado_por||'')).toLowerCase();
+      const blob = ((r.nombre_empleado||'')+' '+(r.cedula_empleado||'')+' '+fmtCed(r.cedula_empleado)+' '+(r.generado_por||'')).toLowerCase();
       if(blob.indexOf(q) < 0) return false;
     }
     return true;
@@ -3322,7 +3430,7 @@ function renderCertHist(){
     html += '<td><strong>'+(r.generado_por||'—')+'</strong></td>';
     html += '<td>'+(CERT_TIPOS[r.tipo]||r.tipo||'—')+'</td>';
     html += '<td>'+(r.nombre_empleado||'—')+'</td>';
-    html += '<td>'+(r.cedula_empleado||'—')+'</td>';
+    html += '<td>'+(fmtCed(r.cedula_empleado)||'—')+'</td>';
     html += '<td>'+(r.cargo||'—')+'</td>';
     if(r.datos_extra){
       html += '<td><button onclick="reDescargarCert('+r.id+')" class="btn btn-outline" style="padding:4px 12px;font-size:10px">Descargar PDF</button></td>';
@@ -3356,7 +3464,7 @@ function exportarCertHist(){
     return {
       'Fecha':r.fecha_generacion||'', 'Emitida Por':r.generado_por||'',
       'Tipo':CERT_TIPOS[r.tipo]||r.tipo||'', 'Empleado':r.nombre_empleado||'',
-      'Cédula':r.cedula_empleado||'', 'Cargo':r.cargo||'',
+      'Cédula':fmtCed(r.cedula_empleado), 'Cargo':r.cargo||'',
       'Departamento':r.departamento||'', 'Sueldo':r.sueldo||'', 'Fecha Ingreso':r.fecha_ingreso||''
     };
   });
@@ -3393,7 +3501,7 @@ async function sbInsertCert(d){
 
 async function sbUpdateNomina(d){
   try{
-    await fetch(SUPA_URL+'/rest/v1/nomina_mayo2026?cedula=eq.'+d.cedula, {
+    await fetch(SUPA_URL+'/rest/v1/nomina_mayo2026?cedula=eq.'+String(d.cedula||'').replace(/[^0-9]/g,''), {
       method:'PATCH',
       headers:{...SUPA_HEADERS,'Prefer':'return=minimal'},
       body: JSON.stringify({
@@ -3435,7 +3543,7 @@ function exportarExcel(){
   }
   const filtered = base.filter(function(r){
     const nombre = (r.nombre_empleado||'').toLowerCase();
-    const cedula = (r.cedula_empleado||'').toLowerCase();
+    const cedula = ((r.cedula_empleado||'')+' '+fmtCed(r.cedula_empleado)).toLowerCase();
     const est = r.estado||'Creada';
     if(estFilt && est !== estFilt) return false;
     if(search && nombre.indexOf(search)<0 && cedula.indexOf(search)<0) return false;
@@ -3450,7 +3558,7 @@ function exportarExcel(){
       r.fecha_generacion||'',
       r.generado_por||'',
       r.nombre_empleado||'',
-      r.cedula_empleado||'',
+      fmtCed(r.cedula_empleado),
       r.cargo||'',
       r.sueldo||'',
       r.naturaleza||'',
@@ -3584,7 +3692,7 @@ function isrRenderResults(){
   isrData.forEach(function(r){
     html+='<tr>';
     html+='<td>'+r.id+'</td>';
-    html+='<td>'+r.cedula+'</td>';
+    html+='<td>'+fmtCed(r.cedula)+'</td>';
     html+='<td><strong>'+r.nombre+'</strong></td>';
     html+='<td>'+r.cargo+'</td>';
     html+='<td>'+r.depto+'</td>';
@@ -3607,7 +3715,7 @@ function isrRenderResults(){
 function isrDescargar(){
   if(!isrData.length) return;
   const rows=isrData.map(function(r){
-    return {'ID':r.id,'Cédula':r.cedula,'Nombre':r.nombre,'Cargo':r.cargo,'Departamento':r.depto,
+    return {'ID':r.id,'Cédula':fmtCed(r.cedula),'Nombre':r.nombre,'Cargo':r.cargo,'Departamento':r.depto,
       'Sueldo':r.sueldo,'Incentivo':r.incentivo,'TSS':r.tss,
       'ISR Sueldo':r.isrSueldo,'ISR Incentivo':r.isrIncentivo,'ISR Total':r.isrTotal,
       'Neto Sueldo':r.netoSueldo,'Neto Incentivo':r.netoIncentivo,'Neto Total':r.netoTotal};
@@ -3617,6 +3725,20 @@ function isrDescargar(){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'ISR');
   XLSX.writeFile(wb,'ISR_Retenciones_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+function isrCalcIndividual(){
+  const s = parseFloat(document.getElementById('isr-ind-sueldo').value)||0;
+  const inc = parseFloat(document.getElementById('isr-ind-incentivo').value)||0;
+  const box = document.getElementById('isr-ind-result');
+  if(s<=0 && inc<=0){ box.style.display='none'; return; }
+  const r = isrCalcEmpleado(s, inc);
+  document.getElementById('isr-ind-tss').textContent  = 'RD$ '+isrFmt(r.tss);
+  document.getElementById('isr-ind-isrs').textContent = 'RD$ '+isrFmt(r.isrSueldo);
+  document.getElementById('isr-ind-isri').textContent = 'RD$ '+isrFmt(r.isrIncentivo);
+  document.getElementById('isr-ind-ret').textContent  = 'RD$ '+isrFmt(r.tss + r.isrTotal);
+  document.getElementById('isr-ind-neto').textContent = 'RD$ '+isrFmt(r.netoTotal);
+  box.style.display='block';
 }
 
 function isrDlPlantilla(){
@@ -3738,7 +3860,7 @@ function regaliaRenderResults(data){
   html+='<th>Meses</th><th style="color:#1e6b3c">Regalía</th></tr></thead><tbody>';
   data.forEach(function(r){
     html+='<tr>';
-    html+='<td>'+r.id+'</td><td>'+r.cedula+'</td>';
+    html+='<td>'+r.id+'</td><td>'+fmtCed(r.cedula)+'</td>';
     html+='<td><strong>'+r.nombre+'</strong>'+(r.proyectado?' <span style="font-size:9px;background:#fef3c7;color:#92400e;border-radius:3px;padding:1px 5px">Proyectado</span>':'')+'</td>';
     html+='<td>'+r.cargo+'</td>';
     html+='<td>'+r.promedio.toLocaleString('es-DO',{minimumFractionDigits:2})+'</td>';
@@ -3770,7 +3892,7 @@ function regaliaReset(){
 function regaliaDescargar(data){
   const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const rows=data.map(function(r){
-    const row={'ID':r.id,'Cédula':r.cedula,'Nombre':r.nombre,'Cargo':r.cargo,'Departamento':r.depto,'Sueldo Promedio':r.promedio};
+    const row={'ID':r.id,'Cédula':fmtCed(r.cedula),'Nombre':r.nombre,'Cargo':r.cargo,'Departamento':r.depto,'Sueldo Promedio':r.promedio};
     MESES.forEach(function(m,i){ row[m]=r.mesData[i+1]!==null?r.mesData[i+1]:''; });
     row['Meses Pagados']=r.meses;
     row['Monto Regalía']=r.regalia;
