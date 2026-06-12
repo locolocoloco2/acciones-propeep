@@ -1,0 +1,210 @@
+/* ════════════════════════════════════════════════════
+   SISTEMA DE ACCIONES DE PERSONAL — PROPEEP
+   Dirección de diseño: "Documento de Estado"
+   Papel oficial · Tipografía gubernamental · Precisión
+   ════════════════════════════════════════════════════ */
+:root{
+  /* Paleta institucional */
+  --azul:#13294b;            /* navy presidencial */
+  --azul2:#1d3d6e;           /* navy hover */
+  --azul-claro:#eef2f8;      /* lavado azul para superficies activas */
+  --rojo:#9e1b32;            /* carmesí bandera — solo filetes ceremoniales */
+  --gris:#f2f3f5;            /* superficie secundaria */
+  --gris2:#e7e9ed;           /* hairlines suaves */
+  --borde:#d6dae1;           /* hairline estándar */
+  --texto:#1a2332;           /* tinta */
+  --texto2:#646e7e;          /* tinta secundaria */
+  --blanco:#fff;
+  --papel:#fdfdfc;           /* papel cálido de documento */
+  --canvas:#edeef1;          /* fondo de página */
+  --ok:#1e6b3c; --ok-bg:#eef7f1;
+  --err:#9e1b32; --err-bg:#fbf0f2;
+  --sombra:0 1px 2px rgba(19,41,75,.05),0 8px 24px -12px rgba(19,41,75,.12);
+  --radio:3px;
+  --focus:0 0 0 3px rgba(29,61,110,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+body{font-family:'Public Sans','Segoe UI',system-ui,sans-serif;background:var(--canvas);color:var(--texto);font-size:13px;line-height:1.55;}
+::selection{background:var(--azul);color:#fff;}
+
+/* ── LOGIN — portada de expediente oficial ── */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:
+  radial-gradient(1200px 800px at 75% -10%,rgba(29,61,110,.55) 0%,transparent 60%),
+  linear-gradient(168deg,#0c1c36 0%,#13294b 55%,#16305a 100%);}
+.login-box{background:var(--papel);border-radius:var(--radio);padding:52px 48px 44px;width:410px;box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 32px 80px -24px rgba(0,0,0,.55);text-align:center;position:relative;}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--azul) 0%,var(--azul) 33%,var(--rojo) 33%,var(--rojo) 66%,var(--azul) 66%);}
+.login-box img{height:64px;margin-bottom:24px;}
+.login-box h2{font-family:'Source Serif 4',Georgia,serif;color:var(--azul);font-size:21px;font-weight:600;margin-bottom:6px;letter-spacing:-.01em;}
+.login-box p{color:var(--texto2);font-size:11.5px;margin-bottom:34px;line-height:1.65;}
+.login-box input{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:var(--radio);font-size:15px;font-family:inherit;font-variant-numeric:tabular-nums;outline:none;text-align:center;letter-spacing:4px;margin-bottom:12px;transition:border-color .15s,box-shadow .15s;background:#fff;color:var(--texto);}
+.login-box input::placeholder{letter-spacing:.02em;font-size:12.5px;color:#9aa3b0;}
+.login-box input:focus{border-color:var(--azul2);box-shadow:var(--focus);}
+.login-box button{width:100%;padding:12px;background:var(--azul);color:#fff;border:none;border-radius:var(--radio);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s;letter-spacing:.04em;text-transform:uppercase;}
+.login-box button:hover{background:var(--azul2);}
+.login-box button:focus-visible{outline:none;box-shadow:var(--focus);}
+.login-err{color:var(--err);font-size:12px;margin-top:12px;display:none;}
+
+/* ── APP ── */
+#app-screen{display:none;min-height:100vh;}
+
+/* Cabecera — membrete */
+header{background:var(--azul);padding:0 28px;display:flex;align-items:center;gap:18px;height:58px;flex-wrap:wrap;position:relative;}
+header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--rojo);}
+header img{height:34px;flex-shrink:0;}
+.header-divider{width:1px;height:26px;background:rgba(255,255,255,.16);flex-shrink:0;}
+header .htxt{flex:1;min-width:0;}
+header .htxt h1{font-family:'Source Serif 4',Georgia,serif;color:#fff;font-size:15.5px;font-weight:600;letter-spacing:.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+header .htxt p{color:rgba(255,255,255,.45);font-size:10px;margin-top:0;letter-spacing:.06em;text-transform:uppercase;}
+.user-badge{display:flex;align-items:center;gap:14px;padding:0;flex-shrink:0;}
+.user-info{text-align:right;line-height:1.35;}
+.user-info .user-name{color:#fff;font-size:12px;font-weight:600;display:block;}
+.user-info .user-role{color:rgba(255,255,255,.42);font-size:9.5px;display:block;letter-spacing:.08em;text-transform:uppercase;}
+.btn-logout{background:transparent;color:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.18);border-radius:var(--radio);padding:6px 14px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;letter-spacing:.05em;text-transform:uppercase;}
+.btn-logout:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.4);color:#fff;}
+
+/* Navegación — barra lateral de módulos */
+.app-body{display:flex;align-items:stretch;min-height:calc(100vh - 58px);}
+.sidebar{width:230px;background:var(--papel);border-right:1px solid var(--borde);padding:16px 12px 28px;flex-shrink:0;}
+.nav-section{margin-bottom:8px;}
+.nav-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--texto2);opacity:.75;margin:14px 12px 7px;}
+.tab{display:flex;align-items:center;gap:11px;padding:9px 12px;margin-bottom:2px;border-radius:var(--radio);font-size:12.5px;font-weight:500;color:var(--texto2);cursor:pointer;border-left:2px solid transparent;transition:background .12s,color .12s;}
+.tab svg{flex-shrink:0;opacity:.7;}
+.tab:hover:not(.active){background:var(--gris);color:var(--texto);}
+.tab.active{background:var(--azul-claro);color:var(--azul);font-weight:600;border-left-color:var(--rojo);}
+.tab.active svg{opacity:1;}
+.nav-toggle{display:none;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:var(--radio);color:rgba(255,255,255,.75);padding:6px 8px;cursor:pointer;line-height:0;}
+.nav-toggle:hover{background:rgba(255,255,255,.08);color:#fff;}
+.nav-overlay{display:none;}
+
+main{flex:1;min-width:0;max-width:1020px;margin:0 auto;padding:24px 28px 88px;}
+.panel{display:none;}.panel.active{display:block;animation:panelIn .22s ease;}
+@keyframes panelIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion:reduce){.panel.active{animation:none;}}
+
+/* Tarjetas — folios de documento */
+.card{background:var(--papel);border-radius:var(--radio);padding:26px 30px;box-shadow:var(--sombra);margin-bottom:16px;border:1px solid var(--borde);}
+.card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--azul);margin-bottom:20px;padding-bottom:11px;border-bottom:1px solid var(--gris2);display:flex;align-items:center;gap:9px;}
+.badge{background:var(--azul);color:#fff;border-radius:2px;padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:.08em;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;}
+.span2{grid-column:span 2;}
+label{display:block;font-size:10.5px;font-weight:600;color:var(--texto2);margin-bottom:5px;letter-spacing:.05em;text-transform:uppercase;}
+input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--borde);border-radius:var(--radio);font-size:12.5px;color:var(--texto);transition:border-color .14s,box-shadow .14s;outline:none;background:#fff;font-family:inherit;}
+input:focus,select:focus,textarea:focus{border-color:var(--azul2);box-shadow:var(--focus);}
+input::placeholder,textarea::placeholder{color:#a4abb7;}
+textarea{resize:vertical;min-height:78px;line-height:1.55;}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23646e7e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;}
+
+/* Naturaleza de la acción */
+.nat-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.nat-group{background:var(--gris);border-radius:var(--radio);padding:11px 13px;border:1px solid var(--gris2);}
+.nat-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--azul);margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid var(--borde);}
+.nat-item{display:flex;align-items:center;gap:8px;padding:4px 5px;border-radius:2px;cursor:pointer;font-size:11.5px;transition:background .1s;color:var(--texto);}
+.nat-item:hover{background:var(--azul-claro);}
+.nat-item input[type=radio]{accent-color:var(--azul);width:13px;height:13px;flex-shrink:0;}
+
+/* Botones — sello de acción */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 20px;border-radius:var(--radio);font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:background .15s,border-color .15s,color .15s;font-family:inherit;letter-spacing:.05em;text-transform:uppercase;}
+.btn:focus-visible{outline:none;box-shadow:var(--focus);}
+.btn-primary{background:var(--azul);color:#fff;border-color:var(--azul);}
+.btn-primary:hover{background:var(--azul2);border-color:var(--azul2);}
+.btn-success{background:var(--ok);color:#fff;border-color:var(--ok);}
+.btn-success:hover{background:#175430;}
+.btn-outline{background:transparent;color:var(--azul);border-color:var(--borde);}
+.btn-outline:hover{border-color:var(--azul);background:var(--azul-claro);}
+.btn-danger{background:transparent;color:var(--err);border-color:var(--borde);}
+.btn-danger:hover{background:var(--err);border-color:var(--err);color:#fff;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.actions-bar{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px;}
+
+/* Zona de carga */
+.drop-zone{border:1.5px dashed var(--borde);border-radius:var(--radio);padding:38px 24px;text-align:center;cursor:pointer;transition:border-color .18s,background .18s;background:transparent;}
+.drop-zone:hover,.drop-zone.over{border-color:var(--azul2);background:var(--azul-claro);}
+.drop-zone p{color:var(--texto2);font-size:12.5px;}
+.drop-zone strong{color:var(--azul);font-weight:600;}
+.drop-zone svg{opacity:.5;}
+
+.tinfo{background:var(--azul-claro);border-left:2px solid var(--azul);border-radius:0 var(--radio) var(--radio) 0;padding:13px 18px;font-size:12px;color:var(--azul);display:flex;align-items:flex-start;gap:11px;margin-bottom:18px;line-height:1.6;}
+.tinfo svg{flex-shrink:0;margin-top:1px;}
+
+/* Tablas — registro oficial */
+table{width:100%;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums;}
+th{background:var(--gris);color:var(--texto2);padding:9px 13px;text-align:left;font-weight:700;white-space:nowrap;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;border-bottom:1px solid var(--borde);}
+td{padding:9px 13px;border-bottom:1px solid var(--gris2);vertical-align:middle;color:var(--texto);}
+tbody tr{transition:background .1s;}
+tbody tr:hover td{background:var(--azul-claro);}
+tr:last-child td{border-bottom:none;}
+.table-wrap{overflow-x:auto;margin-top:16px;border:1px solid var(--borde);border-radius:var(--radio);background:#fff;}
+
+/* Estado — sellos documentales */
+.est-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 7px;border-radius:2px;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1px solid;}
+.est-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
+.est-Creada{background:var(--azul-claro);color:var(--azul);border-color:rgba(19,41,75,.18);}
+.est-Aplicada{background:var(--ok-bg);color:var(--ok);border-color:rgba(30,107,60,.2);}
+.est-Rechazada{background:var(--err-bg);color:var(--err);border-color:rgba(158,27,50,.18);}
+
+/* Mensajes de estado */
+.status{padding:11px 17px;border-radius:var(--radio);font-size:12px;margin-top:14px;display:none;border:1px solid;border-left-width:3px;line-height:1.55;}
+.status.ok{background:var(--ok-bg);color:var(--ok);border-color:rgba(30,107,60,.25);}
+.status.err{background:var(--err-bg);color:var(--err);border-color:rgba(158,27,50,.22);}
+.status.info{background:var(--azul-claro);color:var(--azul);border-color:rgba(19,41,75,.2);}
+.progress{height:2px;background:var(--gris2);border-radius:1px;overflow:hidden;margin-top:12px;display:none;}
+.progress-bar{height:100%;background:var(--azul);width:0%;transition:width .3s ease;}
+
+.filtros{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:18px;align-items:center;}
+.filtros input,.filtros select{width:auto;flex:1;min-width:150px;}
+.hist-loading{text-align:center;padding:48px;color:var(--texto2);font-size:12px;letter-spacing:.02em;}
+
+/* Resumen mensual */
+.mes-card{background:var(--papel);border-radius:var(--radio);box-shadow:var(--sombra);margin-bottom:12px;overflow:hidden;border:1px solid var(--borde);}
+.mes-header{background:var(--azul);color:#fff;padding:12px 22px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:14px;flex-wrap:wrap;}
+.mes-header .mes-totales{font-size:11px;display:flex;gap:22px;opacity:.85;font-variant-numeric:tabular-nums;flex-wrap:wrap;}
+.mes-body{padding:0;}
+.monto-pos{color:var(--ok);font-weight:600;}
+.monto-neg{color:var(--err);font-weight:600;}
+.monto-neu{color:var(--texto2);}
+.resumen-total{background:var(--gris);border-top:1px solid var(--borde);padding:14px 22px;display:flex;gap:30px;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;flex-wrap:wrap;}
+
+/* Sugerencias de búsqueda */
+.cert-sug{position:absolute;z-index:100;background:var(--papel);border:1px solid var(--borde);border-radius:var(--radio);width:100%;max-height:250px;overflow-y:auto;box-shadow:0 12px 32px -8px rgba(19,41,75,.25);margin-top:3px;}
+.cert-sug-item{padding:10px 15px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--gris2);transition:background .1s;}
+.cert-sug-item:last-child{border-bottom:none;}
+.cert-sug-item:hover{background:var(--azul-claro);}
+.cert-sug-item strong{color:var(--azul);font-weight:600;}
+.cert-sug-item span{color:var(--texto2);font-size:10.5px;margin-left:8px;font-variant-numeric:tabular-nums;}
+.tipo-radio-lbl.active{border-color:var(--azul)!important;background:var(--azul-claro)!important;}
+
+/* Pie de página */
+footer{background:var(--azul);padding:20px 28px 18px;text-align:center;margin-top:auto;position:relative;}
+footer::before{content:'';position:absolute;left:0;right:0;top:0;height:2px;background:var(--rojo);}
+footer p{color:rgba(255,255,255,.42);font-size:10.5px;line-height:1.75;letter-spacing:.02em;}
+footer strong{color:rgba(255,255,255,.68);font-weight:600;}
+footer .footer-dev{color:rgba(255,255,255,.3);font-size:9.5px;margin-top:5px;letter-spacing:.06em;text-transform:uppercase;}
+
+/* Responsive */
+@media(max-width:760px){
+  .nav-toggle{display:inline-flex;}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;z-index:300;width:262px;transform:translateX(-103%);transition:transform .22s ease;box-shadow:0 0 48px rgba(0,0,0,.3);padding-top:22px;overflow-y:auto;}
+  .sidebar.open{transform:none;}
+  .nav-overlay{position:fixed;inset:0;background:rgba(12,28,54,.45);z-index:290;}
+  .sidebar.open + .nav-overlay{display:block;}
+  @media (prefers-reduced-motion:reduce){.sidebar{transition:none;}}
+}
+@media(max-width:640px){
+  .grid2,.nat-wrap{grid-template-columns:1fr;}
+  .span2{grid-column:span 1;}
+  header{height:auto;padding:12px 16px;gap:12px;}
+  header .htxt h1{font-size:13.5px;}
+  header .htxt p{display:none;}
+  .header-divider{display:none;}
+  .card{padding:18px 16px;}
+  .actions-bar{justify-content:stretch;}
+  .actions-bar .btn{flex:1;}
+  .filtros{flex-direction:column;align-items:stretch;}
+  .filtros input,.filtros select{width:100%;min-width:unset;}
+  main{padding:0 12px 64px;margin:14px auto;}
+  .login-box{width:calc(100vw - 32px);padding:40px 28px 36px;}
+  .mes-header{padding:11px 16px;}
+  .resumen-total{gap:14px;padding:12px 16px;}
+}
