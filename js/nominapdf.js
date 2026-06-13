@@ -182,16 +182,21 @@ function npGenerarPDF(){
   var totalPages = 0;  // will set after
   var pageNum = 0;
 
-  function drawHeader(){
+  function drawHeader(esRecap){
     pageNum++;
     // Logo
     try{ doc.addImage('data:image/jpeg;base64,'+LOGO_B64,'JPEG',ML,3,15,15.7); }catch(e){}
     // Título centrado
     hv('bold',13); doc.setTextColor(...NEGRO);
-    doc.text('Reporte de Nómina', W/2, 10, {align:'center'});
-    hv('normal',7.5); doc.setTextColor(50,50,50);
-    doc.text('Nómina Normal - '+periodoStr+' - PROPEEP - '+institucion, W/2, 15, {align:'center'});
-    doc.text('Concepto Pago Sueldo: '+estatus+' Correspondiente al mes de '+mesStr+' '+anioStr, W/2, 19, {align:'center'});
+    if(esRecap){
+      doc.text('Recapitulación de Nómina', W/2, 10, {align:'center'});
+      // Sin subtítulo en la página de recapitulación (se ahorra espacio)
+    } else {
+      doc.text('Reporte de Nómina', W/2, 10, {align:'center'});
+      hv('normal',7.5); doc.setTextColor(50,50,50);
+      doc.text('Nómina Normal - '+periodoStr+' - PROPEEP - '+institucion, W/2, 15, {align:'center'});
+      doc.text('Concepto Pago Sueldo: '+estatus+' Correspondiente al mes de '+mesStr+' '+anioStr, W/2, 19, {align:'center'});
+    }
     // Fecha + página
     hv('normal',7); doc.setTextColor(90,90,90);
     var hoy = new Date();
@@ -306,12 +311,10 @@ function npGenerarPDF(){
   doc.text(num(T.neto),  C.neto+colWidths.neto-1,   y+4.8, {align:'right'});
   y+=7;
 
-  // ── RECAPITULACIÓN DE NÓMINA — página propia con header ──
+  // ── RECAPITULACIÓN DE NÓMINA — página propia con su propio título ──
   doc.addPage();
-  drawHeader();
-  hv('bold',12); doc.setTextColor(...NAVY);
-  doc.text('Recapitulación de Nómina', W/2, 30, {align:'center'});
-  y = 38;
+  drawHeader(true);
+  y = 31;
 
   var sumInabi   = npNomina.reduce(function(t,e){return t+(e.inabi||0);},0);
   var sumDepAdic = npNomina.reduce(function(t,e){return t+(e.dep_adic||0);},0);
@@ -365,11 +368,11 @@ function npGenerarPDF(){
 
   // ══ BLOQUE FINAL (totales + firmas + certifico) — SIEMPRE JUNTO ══
   // Alto real del bloque: 3 totales(26) + respiro(16) + firmas(16) + respiro(16) + certifico(20) ≈ 94mm
-  var BLOQUE_H = 106;
+  var BLOQUE_H = 101;
   if(y + BLOQUE_H > H-14){
     doc.addPage();
-    drawHeader();
-    y = 30;
+    drawHeader(true);
+    y = 31;
   }
 
   // 3 totales con borde
