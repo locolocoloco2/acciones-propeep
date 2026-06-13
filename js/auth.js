@@ -74,6 +74,8 @@ function applyRoleUI(){
   if(tabISR) tabISR.style.display = _isV ? '' : 'none';
   const tabRegalia = document.getElementById('tab-regalia');
   if(tabRegalia) tabRegalia.style.display = _isV ? '' : 'none';
+  const tabNov = document.getElementById('tab-novedades');
+  if(tabNov) tabNov.style.display = _isV ? '' : 'none';
   // Ocultar secciones del menú sin módulos visibles
   document.querySelectorAll('.nav-section').forEach(function(sec){
     const visible = Array.from(sec.querySelectorAll('.tab')).some(function(t){ return t.style.display !== 'none'; });
@@ -111,7 +113,7 @@ function closeSidebar(){
 }
 function switchTab(t){
   closeSidebar();
-  ['form','lote','hist','cert','certhist','isr','regalia','resumen'].forEach(function(id){
+  ['form','lote','hist','cert','certhist','isr','novedades','regalia','resumen'].forEach(function(id){
     const tab = document.getElementById('tab-'+id);
     const panel = document.getElementById('panel-'+id);
     if(tab) tab.classList.toggle('active', id===t);

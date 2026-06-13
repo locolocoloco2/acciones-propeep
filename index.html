@@ -61,6 +61,7 @@
   <div class="nav-section">
     <div class="nav-label">Herramientas</div>
     <div class="tab" id="tab-isr" onclick="switchTab('isr')" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11.01"/><line x1="12" y1="11" x2="12" y2="11.01"/><line x1="16" y1="11" x2="16" y2="11.01"/><line x1="8" y1="15" x2="8" y2="15.01"/><line x1="12" y1="15" x2="12" y2="15.01"/><line x1="16" y1="15" x2="16" y2="18"/></svg><span>Calculadora ISR</span></div>
+    <div class="tab" id="tab-novedades" onclick="switchTab('novedades')" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/><path d="M9 3h10a2 2 0 0 1 2 2v10"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg><span>Novedades de Nómina</span></div>
     <div class="tab" id="tab-regalia" onclick="switchTab('regalia')" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg><span>Regalía Pascual</span></div>
   </div>
 </nav>
@@ -286,6 +287,71 @@
 </div>
 
 <!-- REGALÍA PASCUAL PANEL -->
+<div id="panel-novedades" class="panel">
+  <div class="card">
+    <div class="card-title">Novedades de Nómina — Comparativo entre Períodos</div>
+    <div class="tinfo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div>Carga los archivos del <strong>período anterior</strong> y del <strong>período nuevo</strong> (mismo esquema). El sistema detecta ingresos, salidas y cambios de cargo o sueldo automáticamente.</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--texto2);margin-bottom:10px">Período Anterior (ej. Mayo)</div>
+        <div class="nov-upload-zone" id="nov-zona-a" onclick="document.getElementById('nov-fi-a').click()"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="novOnDrop(event,'a')">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9aa3b0" stroke-width="1.5" style="margin-bottom:6px"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <p id="nov-label-a">Arrastra 1 o más archivos Excel</p>
+          <p style="font-size:10px;color:#a4abb7;margin-top:3px">Fijo, Temporal, Eventual, Seguridad</p>
+        </div>
+        <input type="file" id="nov-fi-a" accept=".xlsx,.xls" multiple style="display:none" onchange="novLoadFiles(this.files,'a')">
+        <div id="nov-lista-a" style="margin-top:8px;font-size:11.5px;color:var(--texto2)"></div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--texto2);margin-bottom:10px">Período Nuevo (ej. Junio)</div>
+        <div class="nov-upload-zone" id="nov-zona-b" onclick="document.getElementById('nov-fi-b').click()"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="novOnDrop(event,'b')">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9aa3b0" stroke-width="1.5" style="margin-bottom:6px"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <p id="nov-label-b">Arrastra 1 o más archivos Excel</p>
+          <p style="font-size:10px;color:#a4abb7;margin-top:3px">Fijo, Temporal, Eventual, Seguridad</p>
+        </div>
+        <input type="file" id="nov-fi-b" accept=".xlsx,.xls" multiple style="display:none" onchange="novLoadFiles(this.files,'b')">
+        <div id="nov-lista-b" style="margin-top:8px;font-size:11.5px;color:var(--texto2)"></div>
+      </div>
+    </div>
+    <div class="actions-bar" style="margin-top:16px">
+      <button class="btn btn-outline" onclick="novReset()">Limpiar</button>
+      <button class="btn btn-primary" id="nov-btn-comparar" onclick="novComparar()" disabled>Comparar Períodos</button>
+    </div>
+    <div id="nov-status" class="status" style="display:none"></div>
+  </div>
+
+  <div id="nov-results" style="display:none">
+    <!-- Resumen tarjetas -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px" id="nov-cards"></div>
+
+    <!-- Tabs internos -->
+    <div style="display:flex;border-bottom:1px solid var(--borde);margin-bottom:0;background:#fff;border-radius:var(--radio) var(--radio) 0 0;overflow:hidden" id="nov-tabs">
+      <button class="nov-itab active" onclick="novTab('ingresos')">Ingresos</button>
+      <button class="nov-itab" onclick="novTab('salidas')">Salidas</button>
+      <button class="nov-itab" onclick="novTab('cambios')">Cambios</button>
+      <button class="nov-itab" onclick="novTab('resumen')">Resumen Financiero</button>
+    </div>
+    <div class="card" style="border-radius:0 0 var(--radio) var(--radio);margin-top:0;border-top:none">
+      <div id="nov-panel-ingresos"></div>
+      <div id="nov-panel-salidas" style="display:none"></div>
+      <div id="nov-panel-cambios" style="display:none"></div>
+      <div id="nov-panel-resumen" style="display:none"></div>
+      <div class="actions-bar" style="margin-top:16px">
+        <button class="btn btn-success" onclick="novExportar()">Exportar Excel Completo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="panel-regalia" class="panel">
   <div class="card">
     <div class="card-title">Regalía Pascual RD — Art. 219 Código de Trabajo</div>
