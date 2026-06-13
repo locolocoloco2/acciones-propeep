@@ -316,143 +316,104 @@ async function repGuardarNomina(){
 
 // ── Generar PDF ──
 function repGenerarPDF(){
-  // Use novResultado if repFilas is empty (unified module)
-  if(!repFilas.length && window.novResultado){
-    var r = window.novResultado;
-    r.ingresos.forEach(function(e){ repFilas.push({cedula:e.cedula,nombre:e.nombre,cargo:e.cargo,sueldo:e.sueldo_bruto,tipo:'ENTRADA',concepto:'INGRESO',fecha:''}); });
-    r.salidas.forEach(function(e){ repFilas.push({cedula:e.cedula,nombre:e.nombre,cargo:e.cargo,sueldo:e.sueldo_bruto,tipo:'SALIDA',concepto:'EXCLUSION DE NOMINA',fecha:''}); });
-    r.cambios.forEach(function(c){ repFilas.push({cedula:c.despues.cedula,nombre:c.despues.nombre,cargo:c.despues.cargo,sueldo:c.despues.sueldo_bruto,tipo:'CAMBIO',concepto:'RECLASIFICACION',fecha:''}); });
+  // Pull data from novResultado (unified module)
+  var res = window.novResultado;
+  if(!res){ repSt('pdf-status','Compara los períodos primero.','err'); return; }
+
+  var ingresos = res.ingresos || [];
+  var salidas  = res.salidas  || [];
+  var cambios  = res.cambios  || [];
+
+  if(!ingresos.length && !salidas.length && !cambios.length){
+    repSt('pdf-status','No hay novedades para exportar.','err'); return;
   }
-  if(!repFilas.length){ repSt('pdf-status','Compara los períodos primero.','err'); return; }
-  const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
-  const W=216, H=279, ML=14, MR=14, ANC=W-ML-MR;
-  const NAVY=[13,30,63], ROJO=[140,18,36], NEGRO=[20,20,20];
+
+  var firmante  = (document.getElementById('rep-pdf-firmante')||{value:'PEDRO A. CID MARTINEZ'}).value.trim();
+  var cargoF    = (document.getElementById('rep-pdf-cargo-firmante')||{value:'ENCARGADO DE NOMINA'}).value.trim();
+  var titulo    = (document.getElementById('rep-pdf-titulo')||{value:'NOVEDADES PERSONAL'}).value.trim();
+  var tipoNom   = (document.getElementById('rep-tipo-nomina')||{value:''}).value;
+  var periodoB  = window._novPeriodoB || '';
+
+  var {jsPDF} = window.jspdf;
+  var doc = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  var W=216, H=279, ML=14, MR=14, ANC=W-ML-MR;
+  var NAVY=[13,30,63], ROJO=[140,18,36], NEGRO=[20,20,20];
 
   function tm(style,sz){ doc.setFont('times',style); doc.setFontSize(sz); }
   function hv(style,sz){ doc.setFont('helvetica',style); doc.setFontSize(sz); }
 
-  // ── Logo ──
   try{ doc.addImage('data:image/jpeg;base64,'+LOGO_B64,'JPEG',W-MR-26,6,26,22); }catch(e){}
 
-  // ── Encabezado texto ──
-  tm('bold',11); doc.setTextColor(...NAVY);
+  hv('bold',11); doc.setTextColor(...NAVY);
   doc.text('PROYECTOS ESTRATEGICOS Y PROGRAMAS ESPECIALES DE LA PR', ML, 12);
-  const sub = document.getElementById('rep-pdf-sub').value.trim();
-  if(sub){ tm('normal',10); doc.text(sub, ML, 18); }
-  const titulo = document.getElementById('rep-pdf-titulo').value.trim();
-  tm('bold',11); doc.text(titulo, ML, 24);
-  doc.setLineWidth(0.5); doc.setDrawColor(...NAVY); doc.line(ML,27,W-MR-28,27);
+  hv('bold',11);
+  doc.text(titulo + (periodoB?' — '+periodoB:''), ML, 20);
+  doc.setLineWidth(0.5); doc.setDrawColor(...NAVY); doc.line(ML,24,W-MR-28,24);
 
-  let y = 34;
+  var y = 32;
+  var COL = {id:ML, ced:ML+8, nom:ML+30, car:ML+88, mon:ML+136, fec:ML+156, con:ML+178};
 
-  // ── Secciones ──
-  const secciones = [
-    {label:'ENTRADAS', tipo:'ENTRADA', colMonto:'SUELDO'},
-    {label:'CAMBIOS',  tipo:'CAMBIO',  colMonto:'SUELDO'},
-    {label:'SALIDAS',  tipo:'SALIDA',  colMonto:'MONTO'},
-  ];
-
-  const COL = {id:ML, ced:ML+8, nom:ML+30, car:ML+88, mon:ML+136, fec:ML+156, con:ML+178};
-
-  function drawSeccion(sec, filas){
-    if(!filas.length) return;
-    // Título sección
+  function drawSec(label, rows, colMonto){
+    if(!rows.length) return;
     hv('bold',9.5); doc.setTextColor(...NEGRO);
-    doc.text(sec.label, ML, y); y+=4;
-
-    // Header tabla
-    doc.setFillColor(...NAVY);
-    doc.rect(ML, y, ANC, 6.5,'F');
+    doc.text(label, ML, y); y+=4;
+    doc.setFillColor(...NAVY); doc.rect(ML,y,ANC,6.5,'F');
     hv('bold',7.5); doc.setTextColor(255,255,255);
-    doc.text('ID',    COL.id+1,  y+4.5);
-    doc.text('CEDULA',COL.ced,   y+4.5);
-    doc.text('NOMBRE',COL.nom,   y+4.5);
-    doc.text('CARGO', COL.car,   y+4.5);
-    doc.text(sec.colMonto, COL.mon, y+4.5);
-    doc.text('FECHA', COL.fec,   y+4.5);
-    doc.text('CONCEPTO',COL.con, y+4.5);
+    doc.text('ID',COL.id+1,y+4.5); doc.text('CEDULA',COL.ced,y+4.5);
+    doc.text('NOMBRE',COL.nom,y+4.5); doc.text('CARGO',COL.car,y+4.5);
+    doc.text(colMonto||'SUELDO',COL.mon,y+4.5);
+    doc.text('CONCEPTO',COL.con,y+4.5);
     y+=6.5;
-
-    // Filas
-    let total=0;
-    filas.forEach(function(f,i){
-      if(y > H-42){ doc.addPage(); y=18; }
-      const bg = i%2===0;
-      if(!bg){ doc.setFillColor(242,243,245); doc.rect(ML,y,ANC,5.5,'F'); }
+    var total=0;
+    rows.forEach(function(e,i){
+      if(y>H-42){ doc.addPage(); y=18; }
+      if(i%2===0){ doc.setFillColor(242,243,245); doc.rect(ML,y,ANC,5.5,'F'); }
       hv('normal',7.5); doc.setTextColor(...NEGRO);
       doc.text(String(i+1), COL.id+1, y+4);
-      doc.text(fmtCed(f.cedula).substring(0,14), COL.ced, y+4);
-      doc.text((f.nombre||'').substring(0,30), COL.nom, y+4);
-      doc.text((f.cargo||'').substring(0,22), COL.car, y+4);
-      const montoStr = f.sueldo.toLocaleString('es-DO',{minimumFractionDigits:2});
-      doc.text(montoStr, COL.mon+18, y+4, {align:'right'});
-      doc.text(f.fecha||'', COL.fec, y+4);
-      doc.text((f.concepto||'').substring(0,18), COL.con, y+4);
+      doc.text(fmtCed(e.cedula||'').substring(0,14), COL.ced, y+4);
+      doc.text((e.nombre||'').substring(0,30), COL.nom, y+4);
+      doc.text((e.cargo||'').substring(0,22), COL.car, y+4);
+      var s = e.sueldo_bruto||e.sueldo||0;
+      doc.text(s.toLocaleString('es-DO',{minimumFractionDigits:2}), COL.mon+20, y+4, {align:'right'});
+      var conc = e.concepto || (colMonto==='MONTO'?'EXCLUSION DE NOMINA':'INGRESO');
+      doc.text(conc.substring(0,18), COL.con, y+4);
       doc.setDrawColor(230,232,237); doc.setLineWidth(0.2);
-      doc.line(ML, y+5.5, W-MR, y+5.5);
-      total+=f.sueldo; y+=5.5;
+      doc.line(ML,y+5.5,W-MR,y+5.5);
+      total+=s; y+=5.5;
     });
-
-    // Total sección
-    doc.setFillColor(240,241,244);
-    doc.rect(ML,y,ANC,5.5,'F');
+    // Total row
+    doc.setFillColor(240,241,244); doc.rect(ML,y,ANC,5.5,'F');
     hv('bold',7.5); doc.setTextColor(...NAVY);
     doc.text('TOTAL', COL.mon-12, y+4);
-    doc.text(total.toLocaleString('es-DO',{minimumFractionDigits:2}), COL.mon+18, y+4, {align:'right'});
+    doc.text(total.toLocaleString('es-DO',{minimumFractionDigits:2}), COL.mon+20, y+4, {align:'right'});
     y+=5.5+8;
   }
 
-  const sorted = repFilas.slice().sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
-  secciones.forEach(function(sec){
-    drawSeccion(sec, sorted.filter(function(f){ return f.tipo===sec.tipo; }));
-  });
+  drawSec('ENTRADAS', ingresos, 'SUELDO');
+  drawSec('CAMBIOS',  cambios.map(function(c){return c.despues;}), 'SUELDO');
+  drawSec('SALIDAS',  salidas,  'MONTO');
 
-  // ── Firma ──
-  if(y > H-30){ doc.addPage(); y=18; }
+  // Firma
+  if(y>H-30){ doc.addPage(); y=18; }
   y = Math.max(y, H-45);
   doc.setLineWidth(0.5); doc.setDrawColor(...NEGRO);
-  doc.line(ML, y, ML+65, y); y+=5;
+  doc.line(ML,y,ML+65,y); y+=5;
   hv('bold',9); doc.setTextColor(...NEGRO);
-  const firmante = document.getElementById('rep-pdf-firmante').value.trim();
-  const cargoF   = document.getElementById('rep-pdf-cargo-firmante').value.trim();
   doc.text(firmante, ML, y); y+=5;
   hv('normal',8.5); doc.setTextColor(80,80,80);
   doc.text(cargoF, ML, y);
 
-  // ── Footer ──
-  const fy = H-8;
+  // Footer
+  var fy=H-8;
   doc.setDrawColor(...NAVY); doc.setLineWidth(0.4); doc.line(ML,fy-4,W-MR,fy-4);
   hv('normal',6.5); doc.setTextColor(100,100,100);
-  doc.text('PROPEEP · Dirección General de Proyectos Estratégicos y Especiales de la Presidencia · Dirección de Recursos Humanos', W/2, fy, {align:'center'});
+  doc.text('PROPEEP · Dirección General de Proyectos Estratégicos y Especiales de la Presidencia · Dirección de RR.HH.', W/2, fy, {align:'center'});
 
-  const tipo  = document.getElementById('rep-tipo-nomina').value;
-  const per   = document.getElementById('rep-periodo').value.trim() || new Date().toISOString().slice(0,7);
-  doc.save('Reporte_Novedades_'+tipo+'_'+per+'.pdf');
-  repSt('pdf-status','PDF exportado correctamente.','ok');
+  doc.save('Reporte_Novedades_'+(tipoNom||'Nomina')+'_'+(periodoB||new Date().toISOString().slice(0,7))+'.pdf');
+  repSt('pdf-status','PDF de Novedades exportado correctamente.','ok');
 }
 
-// ── Reset ──
-function repReset(){
-  repNomina={}; repFilas=[]; repAcciones=[];
-  document.getElementById('rep-editor').style.display='none';
-  document.getElementById('rep-fi-label').textContent='Ninguno';
-  document.getElementById('rep-fi').value='';
-  document.getElementById('rep-nomina-status').style.display='none';
-  document.getElementById('rep-pdf-status').style.display='none';
-  repRenderTabla();
-}
 
-// ── Status helper ──
-function repSt(id, msg, tipo){
-  const el=document.getElementById('rep-'+id);
-  if(!el) return;
-  el.textContent=msg; el.className='status '+tipo; el.style.display='block';
-}
-
-// ══════════════════════════════════════════
-// RESUMEN FINANCIERO DE NÓMINA — PDF
-// ══════════════════════════════════════════
 function repGenerarResumenPDF(){
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
