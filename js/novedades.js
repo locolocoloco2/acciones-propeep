@@ -259,71 +259,78 @@ function novRenderCambios(cambios){
 function novRenderResumen(ingresos, salidas, cambios, iguales){
   const div = document.getElementById('nov-panel-resumen');
 
-  function sumRow(arr, label, color){
+  function f(n){ return n.toLocaleString('es-DO',{minimumFractionDigits:2}); }
+
+  // Fila de concepto (Ingresos/Salidas/Cambios) — texto oscuro sobre fondo claro
+  function sumRow(arr, label, color, bgTint){
     if(!arr.length) return '';
     function s(fn){ return arr.reduce(function(t,e){ return t+fn(e); },0); }
-    function f(n){ return n.toLocaleString('es-DO',{minimumFractionDigits:2}); }
-    return `<tr style="color:${color}">
-      <td><strong>${label} (${arr.length})</strong></td>
-      <td style="text-align:right;color:#fff">${f(s(function(e){return e.sueldo_bruto;}))}</td>
-      <td style="text-align:right;color:#fff">${f(s(function(e){return e.isr;}))}</td>
-      <td style="text-align:right;color:#fff">${f(s(function(e){return e.inabi;}))}</td>
-      <td style="text-align:right;color:#fff">${f(s(function(e){return e.ss_emp+e.sfs_emp;}))}</td>
-      <td style="text-align:right;color:#fff">${f(s(function(e){return e.ss_empl+e.sfs_empl;}))}</td>
-      <td style="text-align:right;color:#fff">${f(s(function(e){return e.dep_adic;}))}</td>
-      <td style="text-align:right;color:#fff">${f(s(function(e){return e.riesgo;}))}</td>
-      <td style="text-align:right;color:#fff"><strong>${f(s(function(e){return e.sueldo_neto;}))}</strong></td>
-    </tr>`;
+    var cols = [
+      s(function(e){return e.sueldo_bruto;}),
+      s(function(e){return e.isr;}),
+      s(function(e){return e.inabi;}),
+      s(function(e){return e.ss_emp+e.sfs_emp;}),
+      s(function(e){return e.ss_empl+e.sfs_empl;}),
+      s(function(e){return e.dep_adic;}),
+      s(function(e){return e.riesgo;}),
+      s(function(e){return e.sueldo_neto;}),
+    ];
+    var tds = cols.map(function(v){ return '<td style="text-align:right;color:var(--texto);font-variant-numeric:tabular-nums">'+f(v)+'</td>'; }).join('');
+    return '<tr style="background:'+bgTint+'">'+
+      '<td style="color:'+color+';font-weight:700">'+label+' ('+arr.length+')</td>'+tds+'</tr>';
   }
 
   const allB = ingresos.concat(cambios.map(function(c){return c.despues;})).concat(iguales);
   const allA = salidas.concat(cambios.map(function(c){return c.antes;})).concat(iguales);
 
+  // Fila de total — fondo navy, TODO el texto en blanco
   function totalRow(arr, label){
     function s(fn){ return arr.reduce(function(t,e){ return t+fn(e); },0); }
-    function f(n){ return n.toLocaleString('es-DO',{minimumFractionDigits:2}); }
-    return `<tr style="background:var(--azul);color:#fff;font-weight:700;font-size:11.5px">
-      <td style="color:#fff;padding:10px 13px">${label} (${arr.length})</td>
-      <td style="text-align:right">${f(s(function(e){return e.sueldo_bruto;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.isr;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.inabi;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.ss_emp+e.sfs_emp;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.ss_empl+e.sfs_empl;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.dep_adic;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.riesgo;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.sueldo_neto;}))}</td>
-    </tr>`;
+    var cols = [
+      s(function(e){return e.sueldo_bruto;}),
+      s(function(e){return e.isr;}),
+      s(function(e){return e.inabi;}),
+      s(function(e){return e.ss_emp+e.sfs_emp;}),
+      s(function(e){return e.ss_empl+e.sfs_empl;}),
+      s(function(e){return e.dep_adic;}),
+      s(function(e){return e.riesgo;}),
+      s(function(e){return e.sueldo_neto;}),
+    ];
+    var tds = cols.map(function(v){ return '<td style="text-align:right;color:#fff;font-variant-numeric:tabular-nums">'+f(v)+'</td>'; }).join('');
+    return '<tr style="background:var(--azul)">'+
+      '<td style="color:#fff;font-weight:700;padding:11px 13px">'+label+' ('+arr.length+')</td>'+tds+'</tr>';
   }
 
-  let html = `<div class="table-wrap"><table>
-    <thead><tr><th>Concepto</th><th>Sueldo Bruto</th><th>ISR</th><th>Seg. Vida INABI</th><th>TSS Empleado</th><th>TSS Empleador</th><th>Dep. Adicional</th><th>Riesgo Lab.</th><th>Sueldo Neto</th></tr></thead>
-    <tbody>`;
-
-  html += sumRow(ingresos, 'Ingresos', '#155C30');
-  html += sumRow(salidas, 'Salidas', '#9E1B32');
-  html += sumRow(cambios.map(function(c){return c.antes;}), 'Cambios — Antes', '#92400E');
-  html += sumRow(cambios.map(function(c){return c.despues;}), 'Cambios — Después', '#92400E');
-  html += '<tr><td colspan="9" style="height:4px;background:var(--gris2)"></td></tr>';
-  html += totalRow(allA, 'Total Período Anterior');
-  html += totalRow(allB, 'Total Período Nuevo');
-
-  // Fila de diferencia neta
+  // Fila de variación — fondo gris, texto oscuro
   function diffRow(){
     function sA(fn){ return allA.reduce(function(t,e){ return t+fn(e); },0); }
     function sB(fn){ return allB.reduce(function(t,e){ return t+fn(e); },0); }
-    function fd(fn){ const d=sB(fn)-sA(fn); return (d>=0?'+':'')+d.toLocaleString('es-DO',{minimumFractionDigits:2}); }
-    return `<tr style="background:var(--gris);font-weight:700;font-size:11px">
-      <td>Variación Neta</td>
-      <td style="text-align:right">${fd(function(e){return e.sueldo_bruto;})}</td>
-      <td style="text-align:right">${fd(function(e){return e.isr;})}</td>
-      <td style="text-align:right">${fd(function(e){return e.inabi;})}</td>
-      <td style="text-align:right">${fd(function(e){return e.ss_emp+e.sfs_emp;})}</td>
-      <td style="text-align:right">${fd(function(e){return e.ss_empl+e.sfs_empl;})}</td>
-      <td style="text-align:right">${fd(function(e){return e.dep_adic;})}</td>
-      <td style="text-align:right">${fd(function(e){return e.riesgo;})}</td>
-      <td style="text-align:right">${fd(function(e){return e.sueldo_neto;})}</td>
-    </tr>`;
+    var getters = [
+      function(e){return e.sueldo_bruto;}, function(e){return e.isr;},
+      function(e){return e.inabi;}, function(e){return e.ss_emp+e.sfs_emp;},
+      function(e){return e.ss_empl+e.sfs_empl;}, function(e){return e.dep_adic;},
+      function(e){return e.riesgo;}, function(e){return e.sueldo_neto;},
+    ];
+    var tds = getters.map(function(fn){
+      var d = sB(fn)-sA(fn);
+      var col = d>0?'#155C30':d<0?'#9E1B32':'var(--texto2)';
+      return '<td style="text-align:right;color:'+col+';font-variant-numeric:tabular-nums">'+(d>=0?'+':'')+f(d)+'</td>';
+    }).join('');
+    return '<tr style="background:var(--gris)">'+
+      '<td style="font-weight:700;color:var(--texto)">Variación Neta</td>'+tds+'</tr>';
   }
+
+  let html = '<div class="table-wrap"><table>'+
+    '<thead><tr><th>Concepto</th><th>Sueldo Bruto</th><th>ISR</th><th>Seg. Vida INABI</th><th>TSS Empleado</th><th>TSS Empleador</th><th>Dep. Adicional</th><th>Riesgo Lab.</th><th>Sueldo Neto</th></tr></thead>'+
+    '<tbody>';
+
+  html += sumRow(ingresos, 'Ingresos', '#155C30', '#f3faf5');
+  html += sumRow(salidas, 'Salidas', '#9E1B32', '#fdf4f5');
+  html += sumRow(cambios.map(function(c){return c.antes;}), 'Cambios — Antes', '#92400E', '#fdfaf2');
+  html += sumRow(cambios.map(function(c){return c.despues;}), 'Cambios — Después', '#92400E', '#fdfaf2');
+  html += '<tr><td colspan="9" style="height:6px;background:var(--gris2);padding:0"></td></tr>';
+  html += totalRow(allA, 'Total Período Anterior');
+  html += totalRow(allB, 'Total Período Nuevo');
   html += diffRow();
   html += '</tbody></table></div>';
   div.innerHTML = html;
