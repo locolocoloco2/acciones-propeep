@@ -185,7 +185,7 @@ function npGenerarPDF(){
   function drawHeader(){
     pageNum++;
     // Logo
-    try{ doc.addImage('data:image/jpeg;base64,'+LOGO_B64,'JPEG',ML,4,16,13); }catch(e){}
+    try{ doc.addImage('data:image/jpeg;base64,'+LOGO_B64,'JPEG',ML,3,15,15.7); }catch(e){}
     // Título centrado
     hv('bold',13); doc.setTextColor(...NEGRO);
     doc.text('Reporte de Nómina', W/2, 10, {align:'center'});
@@ -415,12 +415,12 @@ function npGenerarPDF(){
   });
   y = ny + 20;
 
-  // ── Certificación (letra regular, centrada) ──
-  hv('normal',8); doc.setTextColor(...NEGRO);
+  // ── Certificación (letra regular, alineada a la izquierda) ──
+  hv('normal',7); doc.setTextColor(...NEGRO);
   var certText = 'CERTIFICO QUE ESTA NOMINA DE PAGO, CONSTA DE '+emps.length+' PERSONAS, ESTA CORRECTA Y COMPLETA Y QUE LAS PERSONAS ENUMERADAS EN LA MISMA SON LAS QUE A ESTA FECHA FIGURAN EN LOS RECORDS DE PERSONAL QUE MANTIENE LA SECCION DE SERVICIOS PERSONALES DE LA CONTRALORIA GENERAL DE LA REPUBLICA.';
-  var certLines = doc.splitTextToSize(certText, ANC-40);
+  var certLines = doc.splitTextToSize(certText, ANC);
   certLines.forEach(function(ln, li){
-    doc.text(ln, W/2, y + li*5, {align:'center'});
+    doc.text(ln, ML, y + li*4.5);
   });
 
   // Footer con numeración en todas las páginas
