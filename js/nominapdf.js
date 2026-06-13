@@ -212,7 +212,7 @@ function npGenerarPDF(){
       ['Prov:','99'],['Mun:','9999'],['CCP:',cuenta],['Fun:','1.1.02'],['Obj:','00000'],
     ];
     var x = x0;
-    doc.setFontSize(5.8); doc.setTextColor(80,80,80);
+    doc.setFontSize(6.8); doc.setTextColor(80,80,80);
     partes.forEach(function(p){
       doc.setFont('helvetica','bold');
       doc.text(p[0], x, yL);
@@ -246,7 +246,7 @@ function npGenerarPDF(){
   var ROW_H  = 8.0;    // alto uniforme: cómodo para 2 líneas, no apretado
 
   drawHeader();
-  var y = drawTableHeader(28);
+  var y = drawTableHeader(29);
 
   var T = {bruto:0,afp:0,isr:0,sfs:0,otros:0,desc:0,neto:0};
 
@@ -254,7 +254,7 @@ function npGenerarPDF(){
     if(y+ROW_H > H-14){
       doc.addPage();
       drawHeader();
-      y = drawTableHeader(28);
+      y = drawTableHeader(29);
     }
     if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ML,y,ANC,ROW_H,'F'); }
     hv('normal',6.8); doc.setTextColor(...NEGRO);
@@ -292,7 +292,7 @@ function npGenerarPDF(){
   });
 
   // Total General row
-  if(y+7 > H-14){ doc.addPage(); drawHeader(); y=28; }
+  if(y+7 > H-14){ doc.addPage(); drawHeader(); y=29; }
   doc.setFillColor(235,238,243); doc.rect(ML,y,ANC,7,'F');
   doc.setDrawColor(...NAVY); doc.setLineWidth(0.5); doc.rect(ML,y,ANC,7,'S');
   hv('bold',7); doc.setTextColor(...NAVY);
@@ -309,7 +309,6 @@ function npGenerarPDF(){
   // ── RECAPITULACIÓN DE NÓMINA — página propia con header ──
   doc.addPage();
   drawHeader();
-  // Título de la página
   hv('bold',12); doc.setTextColor(...NAVY);
   doc.text('Recapitulación de Nómina', W/2, 30, {align:'center'});
   y = 38;
@@ -319,19 +318,22 @@ function npGenerarPDF(){
   var sumSfsEmpl = npNomina.reduce(function(t,e){return t+(e.sfs_empl||0);},0);
   var sumSsEmpl  = npNomina.reduce(function(t,e){return t+(e.ss_empl||0);},0);
   var sumRiesgo  = npNomina.reduce(function(t,e){return t+(e.riesgo||0);},0);
+  var creditoF   = parseFloat((document.getElementById('np-credito-fiscal')||{value:0}).value)||0;
 
   // 5 columnas: SIGEF | RNC | Beneficiario | Concepto | Monto
-  // [codigo SIGEF, RNC, Beneficiario, Concepto, monto]
   var conceptos = [
     ['02001','499999984','COLECTOR DE IMPUESTOS INTERNOS','IMPUESTO SOBRE LA RENTA', T.isr],
     ['02002','430149454','TESORERIA DE LA SEGURIDAD SOCIAL','SEGURIDAD SOCIAL', T.afp],
     ['03007','430149454','TESORERIA DE LA SEGURIDAD SOCIAL','APORTE SEG. FAMILIAR DE SALUD EMPLEADO', T.sfs],
     ['03002','430149454','TSS','SEGURO PERCAPITA', sumDepAdic],
     ['03004','430149462','INSTITUTO DE AUXILIOS Y VIVIENDAS','SEG. VIDA, CES. E INVALIDEZ', sumInabi],
+    ['590-02','499999984','COLECTOR DE RENTAS INTERNAS','CREDITO FISCAL PARA ISR', creditoF],
+    ['02001','499999984','COLECTOR DE IMPUESTOS INTERNOS','APORTE AFP EMPLEADOR', sumSsEmpl],
+    ['02001','499999984','COLECTOR DE IMPUESTOS INTERNOS','APORTE SFS EMPLEADOR', sumSfsEmpl],
+    ['02001','499999984','COLECTOR DE IMPUESTOS INTERNOS','APORTE RIESGO LABORAL', sumRiesgo],
   ];
 
-  // Columnas (5): SIGEF | RNC | Beneficiario | Concepto | Monto
-  var k1=22, k2=28, k3=110, k4=115, k5=38; // suma=313mm
+  var k1=22, k2=28, k3=110, k4=115, k5=38;
   var ctblW = k1+k2+k3+k4+k5;
   var ctblX = (W - ctblW)/2;
   var KX = {sigef:ctblX, rnc:ctblX+k1, ben:ctblX+k1+k2, con:ctblX+k1+k2+k3, mon:ctblX+ctblW};
@@ -359,10 +361,19 @@ function npGenerarPDF(){
     doc.line(ctblX, y+6, ctblX+ctblW, y+6);
     y+=6;
   });
-  // Tres totales finales en el mismo estilo: Brutos → Descuentos → Neto
-  y+=2;
+  y+=4;
+
+  // ══ BLOQUE FINAL (totales + firmas + certifico) — SIEMPRE JUNTO ══
+  // Alto estimado del bloque: 3 totales(25) + respiro(22) + firmas(18) + respiro(22) + certifico(25) ≈ 112mm
+  var BLOQUE_H = 115;
+  if(y + BLOQUE_H > H-14){
+    doc.addPage();
+    drawHeader();
+    y = 34;
+  }
+
+  // 3 totales con borde
   function totalBar(label, monto){
-    // Borde en vez de fondo azul (legible tras fotocopias)
     doc.setDrawColor(...NAVY); doc.setLineWidth(0.5);
     doc.rect(ctblX,y,ctblW,7,'S');
     hv('bold',8.5); doc.setTextColor(...NEGRO);
@@ -370,10 +381,13 @@ function npGenerarPDF(){
     doc.text(num(monto), ctblX+ctblW-2, y+4.8, {align:'right'});
     y+=7+1.5;
   }
+  // Total descuentos al empleado incluye el crédito fiscal restado (como en SIGEF: el crédito reduce el ISR a pagar)
+  var totalDescEmp = T.desc - creditoF;
+  var netoConCredito = T.neto + creditoF;
   totalBar('TOTAL SUELDOS BRUTOS', T.bruto);
-  totalBar('TOTAL DESCUENTOS', T.desc);
-  totalBar('TOTAL SUELDO NETO', T.neto);
-  y+=14;
+  totalBar('TOTAL DESCUENTOS EMPLEADOS', totalDescEmp);
+  totalBar('TOTAL SUELDO NETO', netoConCredito);
+  y+=24;
 
   // ── 4 FIRMAS configurables ──
   var firmantes = (window.PROPEEP_CONFIG && window.PROPEEP_CONFIG.firmantes) || [
@@ -383,11 +397,8 @@ function npGenerarPDF(){
     {nombre:'ROBERT D. POLANCO TEJADA', cargo:'DIRECTOR (A) DE PROYECTOS ESTRATEGICOS Y ESPECIALES DE LA PRESIDENCIA'},
   ];
 
-  // Asegurar espacio para las firmas; si no, página nueva con header
-  if(y + 30 > H-10){ doc.addPage(); drawHeader(); y=34; }
-
   var fw = 74;
-  var gap = (ANC - 4*fw)/3; // separación uniforme entre 4 firmas
+  var gap = (ANC - 4*fw)/3;
   var fxs = [0,1,2,3].map(function(k){ return ML + k*(fw+gap); });
   doc.setDrawColor(...NEGRO); doc.setLineWidth(0.4);
   fxs.forEach(function(fx){ doc.line(fx, y, fx+fw, y); });
@@ -402,19 +413,14 @@ function npGenerarPDF(){
       doc.text(ln, fx+fw/2, ny+4 + li*3, {align:'center'});
     });
   });
-  // Avanzar debajo de las firmas (espacio considerable)
-  y = ny + 16;
+  y = ny + 26;
 
-  // ── Certificación debajo de las firmas (letra regular, justificada centrada) ──
-  var certPage = doc.internal.getNumberOfPages();
-  var certY = y;
-  // Si no hay espacio antes del footer, bajar pero sin pegarse al borde
-  if(y + 20 > H-14){ /* dejar donde está, hay margen suficiente */ }
-  hv('normal',9); doc.setTextColor(...NEGRO);
-  var certPlaceholder = 'CERTIFICO QUE ESTA NOMINA DE PAGO, CONSTA DE '+emps.length+' PERSONAS, ESTA CORRECTA Y COMPLETA Y QUE LAS PERSONAS ENUMERADAS EN LA MISMA SON LAS QUE A ESTA FECHA FIGURAN EN LOS RECORDS DE PERSONAL QUE MANTIENE LA SECCION DE SERVICIOS PERSONALES DE LA CONTRALORIA GENERAL DE LA REPUBLICA.';
-  var certLines = doc.splitTextToSize(certPlaceholder, ANC-40);
+  // ── Certificación (letra regular, centrada) ──
+  hv('normal',8); doc.setTextColor(...NEGRO);
+  var certText = 'CERTIFICO QUE ESTA NOMINA DE PAGO, CONSTA DE '+emps.length+' PERSONAS, ESTA CORRECTA Y COMPLETA Y QUE LAS PERSONAS ENUMERADAS EN LA MISMA SON LAS QUE A ESTA FECHA FIGURAN EN LOS RECORDS DE PERSONAL QUE MANTIENE LA SECCION DE SERVICIOS PERSONALES DE LA CONTRALORIA GENERAL DE LA REPUBLICA.';
+  var certLines = doc.splitTextToSize(certText, ANC-40);
   certLines.forEach(function(ln, li){
-    doc.text(ln, W/2, certY + li*5, {align:'center'});
+    doc.text(ln, W/2, y + li*5, {align:'center'});
   });
 
   // Footer con numeración en todas las páginas
@@ -427,7 +433,6 @@ function npGenerarPDF(){
     doc.text('Coletilla: '+coletilla, ML, fy);
     doc.text('Pág. '+p+' / '+totalP, W-MR, fy, {align:'right'});
   }
-
 
   doc.save('Reporte_Nomina_'+tipoNom+'_'+periodoStr+'.pdf');
   npSt('pdf-status','Reporte de Nómina exportado correctamente.','ok');
