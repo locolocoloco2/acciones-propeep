@@ -9,6 +9,35 @@ function isrRound(n){ return Math.round(n*100)/100; }
 function isrFmt(n){ return n.toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
 function isrCalcISR(base){
+  // Usar tramos de configuración si existen (anuales → mensual), si no los default
+  var cfg = (window.PROPEEP_CONFIG && window.PROPEEP_CONFIG.isrTramos) ? window.PROPEEP_CONFIG.isrTramos : null;
+  if(cfg && cfg.length){
+    // base es mensual; los tramos config son anuales → comparamos sobre base anual
+    var anual = base * 12;
+    var isrAnual = 0;
+    for(var i=0;i<cfg.length;i++){
+      var tr = cfg[i];
+      var sup = (tr.hasta===null || tr.hasta===undefined) ? Infinity : tr.hasta;
+      if(anual > tr.desde){
+        // Método de cuota fija + % sobre excedente del tramo
+        if(anual <= sup){
+          isrAnual = (tr.fijo||0) + (anual - tr.desde) * (tr.tasa/100);
+        }
+      }
+    }
+    // Buscar el tramo correcto (el último cuyo desde <= anual)
+    var tramo = null;
+    for(var j=0;j<cfg.length;j++){
+      if(anual >= cfg[j].desde) tramo = cfg[j];
+    }
+    if(tramo){
+      isrAnual = (tramo.fijo||0) + (anual - tramo.desde) * (tramo.tasa/100);
+    } else {
+      isrAnual = 0;
+    }
+    return isrRound(Math.max(0, isrAnual) / 12);
+  }
+  // Fallback: tramos mensuales por defecto
   let t=0;
   for(const tr of ISR_TRAMOS){
     if(base<=tr.inf) break;

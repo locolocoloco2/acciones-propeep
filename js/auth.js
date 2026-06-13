@@ -79,6 +79,7 @@ function applyRoleUI(){
   if(tabRep) tabRep.style.display = _isV ? '' : 'none';
   const tabNP = document.getElementById('tab-nominapdf');
   if(tabNP) tabNP.style.display = _isV ? '' : 'none';
+  if(typeof mostrarBotonConfig === 'function') mostrarBotonConfig(_isV);
   // Ocultar secciones del menú sin módulos visibles
   document.querySelectorAll('.nav-section').forEach(function(sec){
     const visible = Array.from(sec.querySelectorAll('.tab')).some(function(t){ return t.style.display !== 'none'; });
@@ -144,6 +145,8 @@ function enterApp(found){
   applyRoleUI();
   applyNatRestrictions();
   loadHist();
+  // Recargar configuración compartida desde la base de datos
+  if(typeof cargarConfigBD === 'function') cargarConfigBD();
 }
 
 function saveSession(){

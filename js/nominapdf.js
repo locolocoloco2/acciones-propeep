@@ -209,53 +209,54 @@ function npGenerarPDF(){
     return y+8;
   }
 
-  function measureRowHeight(e){
-    // Measure how many lines nombre and cargo need
-    var nomLines = doc.splitTextToSize(e.nombre||'', colWidths.nom-2).length;
-    var carLines = doc.splitTextToSize(e.cargo||'', colWidths.cargo-2).length;
-    var lines = Math.max(nomLines, carLines, 1);
-    return Math.max(5, lines * 3.4 + 2);
-  }
+  // ── Render pages — altura de fila FIJA, texto centrado verticalmente ──
+  hv('normal',6.8);
+  var ROW_H = 7;   // alto fijo de cada fila
 
-  // ── Render pages ──
   drawHeader();
   var y = drawTableHeader(24);
 
   var T = {bruto:0,afp:0,isr:0,sfs:0,otros:0,desc:0,neto:0};
 
   emps.forEach(function(e,i){
-    hv('normal',6.8);
-    var rh = measureRowHeight(e);
-    if(y+rh > H-14){
+    if(y+ROW_H > H-14){
       doc.addPage();
       drawHeader();
       y = drawTableHeader(24);
     }
-    if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ML,y,ANC,rh,'F'); }
-    doc.setTextColor(...NEGRO);
-    // Multi-line text for nombre and cargo
-    var nomLines = doc.splitTextToSize(e.nombre||'', colWidths.nom-2);
-    var carLines = doc.splitTextToSize(e.cargo||'', colWidths.cargo-2);
-    var textY = y + 3.2;
+    if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ML,y,ANC,ROW_H,'F'); }
     hv('normal',6.8); doc.setTextColor(...NEGRO);
-    doc.text(nomLines, C.nom+1, textY);
-    doc.text(carLines, C.cargo+1, textY);
-    doc.text(estatus, C.est+1, textY);
-    doc.text(fmtCed(e.cedula||''), C.doc+1, textY);
+
+    // Nombre y cargo: máx 2 líneas, centradas verticalmente en la fila
+    var nomLines = doc.splitTextToSize(e.nombre||'', colWidths.nom-2).slice(0,2);
+    var carLines = doc.splitTextToSize(e.cargo||'', colWidths.cargo-2).slice(0,2);
+    var maxLines = Math.max(nomLines.length, carLines.length, 1);
+    var lineH = 3.0;
+    // Centro vertical: punto de inicio para que el bloque quede centrado
+    var blockH = maxLines * lineH;
+    var startY = y + (ROW_H - blockH)/2 + 2.3;
+
+    nomLines.forEach(function(ln, li){ doc.text(ln, C.nom+1, startY + li*lineH); });
+    carLines.forEach(function(ln, li){ doc.text(ln, C.cargo+1, startY + li*lineH); });
+
+    // Resto de columnas centradas en la fila (una línea)
+    var midY = y + ROW_H/2 + 1.1;
+    doc.text(estatus, C.est+1, midY);
+    doc.text(fmtCed(e.cedula||''), C.doc+1, midY);
     var otros = (e.inabi||0) + (e.dep_adic||0);
-    doc.text(num(e.sueldo),    C.bruto+colWidths.bruto-1, textY, {align:'right'});
-    doc.text(num(e.afp),       C.afp+colWidths.afp-1,     textY, {align:'right'});
-    doc.text(num(e.isr),       C.isr+colWidths.isr-1,     textY, {align:'right'});
-    doc.text(num(e.sfs),       C.sfs+colWidths.sfs-1,     textY, {align:'right'});
-    doc.text(num(otros),       C.otros+colWidths.otros-1, textY, {align:'right'});
-    doc.text(num(e.total_desc),C.desc+colWidths.desc-1,   textY, {align:'right'});
-    doc.text(num(e.neto),      C.neto+colWidths.neto-1,   textY, {align:'right'});
-    // Row separator
+    doc.text(num(e.sueldo),    C.bruto+colWidths.bruto-1, midY, {align:'right'});
+    doc.text(num(e.afp),       C.afp+colWidths.afp-1,     midY, {align:'right'});
+    doc.text(num(e.isr),       C.isr+colWidths.isr-1,     midY, {align:'right'});
+    doc.text(num(e.sfs),       C.sfs+colWidths.sfs-1,     midY, {align:'right'});
+    doc.text(num(otros),       C.otros+colWidths.otros-1, midY, {align:'right'});
+    doc.text(num(e.total_desc),C.desc+colWidths.desc-1,   midY, {align:'right'});
+    doc.text(num(e.neto),      C.neto+colWidths.neto-1,   midY, {align:'right'});
+
     doc.setDrawColor(220,222,228); doc.setLineWidth(0.15);
-    doc.line(ML, y+rh, W-MR, y+rh);
+    doc.line(ML, y+ROW_H, W-MR, y+ROW_H);
     T.bruto+=e.sueldo; T.afp+=e.afp; T.isr+=e.isr;
     T.sfs+=e.sfs; T.otros+=otros; T.desc+=e.total_desc; T.neto+=e.neto;
-    y+=rh;
+    y+=ROW_H;
   });
 
   // Total General row
@@ -272,10 +273,13 @@ function npGenerarPDF(){
   doc.text(num(T.neto),  C.neto+colWidths.neto-1,   y+4.8, {align:'right'});
   y+=7;
 
-  // ── Cuadro de conceptos — en su propia página con header ──
+  // ── RECAPITULACIÓN DE NÓMINA — página propia con header ──
   doc.addPage();
   drawHeader();
-  y = 30;
+  // Título de la página
+  hv('bold',12); doc.setTextColor(...NAVY);
+  doc.text('Recapitulación de Nómina', W/2, 30, {align:'center'});
+  y = 38;
 
   var sumInabi   = npNomina.reduce(function(t,e){return t+(e.inabi||0);},0);
   var sumDepAdic = npNomina.reduce(function(t,e){return t+(e.dep_adic||0);},0);
@@ -283,73 +287,80 @@ function npGenerarPDF(){
   var sumSsEmpl  = npNomina.reduce(function(t,e){return t+(e.ss_empl||0);},0);
   var sumRiesgo  = npNomina.reduce(function(t,e){return t+(e.riesgo||0);},0);
 
+  // 4 columnas: Código SIGEF | Concepto | Beneficiario | Monto
   var conceptos = [
-    ['100-08',  'Salario',                              T.bruto],
-    ['500-01',  'AFP',                                  T.afp],
-    ['500-02',  'Impuesto Sobre la Renta',              T.isr],
-    ['500-03',  'Seguro de Vida (INABI)',                sumInabi],
-    ['510-02',  'Seguro Familiar de Salud (SFS)',        T.sfs],
-    ['510-03',  'SFS Padres / Dependientes Adicionales', sumDepAdic],
-    ['900-01',  'Aporte Fondos de Pensiones (Empleador)',sumSsEmpl],
-    ['900-02',  'Aporte Seguro de Riesgo Laboral',      sumRiesgo],
-    ['900-03',  'Aporte Seguro Familiar de Salud (Empleador)', sumSfsEmpl],
+    ['100-08','Salario','Servidores Públicos', T.bruto],
+    ['500-01','AFP','Tesorería Seguridad Social (RECO)', T.afp],
+    ['500-02','Impuesto Sobre la Renta','Colector de Rentas Internas', T.isr],
+    ['500-03','Seguro de Vida (INABI)','Instituto de Aux. y Vivienda', sumInabi],
+    ['510-02','Seguro Familiar de Salud (SFS)','Tesorería Seguridad Social (RECO)', T.sfs],
+    ['510-03','SFS Padres / Dependientes Adic.','Tesorería Seguridad Social (RECO)', sumDepAdic],
+    ['900-01','Aporte Fondos de Pensiones','Tesorería Seguridad Social (RECO)', sumSsEmpl],
+    ['900-02','Aporte Seguro de Riesgo Laboral','Tesorería Seguridad Social (RECO)', sumRiesgo],
+    ['900-03','Aporte Seguro Familiar de Salud','Tesorería Seguridad Social (RECO)', sumSfsEmpl],
   ];
 
-  // Header de conceptos tabla
-  var cw1=40, cw2=160, cw3=50; // Código | Concepto | Monto
-  doc.setFillColor(...NAVY); doc.rect(ML,y,cw1+cw2+cw3,7,'F');
-  hv('bold',7.5); doc.setTextColor(255,255,255);
-  doc.text('Código SIGEF', ML+2,          y+5);
-  doc.text('Beneficiario / Concepto',     ML+cw1+2,    y+5);
-  doc.text('Monto (RD$)', ML+cw1+cw2+cw3-2, y+5, {align:'right'});
+  // Columnas de la tabla de conceptos (4)
+  var cc1=38, cc2=95, cc3=120, cc4=50; // suma=303mm
+  var ctblW = cc1+cc2+cc3+cc4;
+  var ctblX = (W - ctblW)/2; // centrada
+  doc.setFillColor(...NAVY); doc.rect(ctblX,y,ctblW,7,'F');
+  hv('bold',8); doc.setTextColor(255,255,255);
+  doc.text('Código SIGEF', ctblX+2, y+4.8);
+  doc.text('Concepto', ctblX+cc1+2, y+4.8);
+  doc.text('Beneficiario', ctblX+cc1+cc2+2, y+4.8);
+  doc.text('Monto (RD$)', ctblX+ctblW-2, y+4.8, {align:'right'});
   y+=7;
 
   conceptos.forEach(function(c,i){
-    if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ML,y,cw1+cw2+cw3,5.5,'F'); }
-    hv('normal',7.5); doc.setTextColor(...NEGRO);
-    doc.text(c[0],    ML+2,              y+3.8);
-    doc.text(c[1],    ML+cw1+2,         y+3.8);
-    doc.text(num(c[2]), ML+cw1+cw2+cw3-2, y+3.8, {align:'right'});
+    if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ctblX,y,ctblW,6,'F'); }
+    hv('normal',8); doc.setTextColor(...NEGRO);
+    doc.text(c[0], ctblX+2, y+4);
+    doc.text(c[1], ctblX+cc1+2, y+4);
+    doc.text(c[2], ctblX+cc1+cc2+2, y+4);
+    hv('bold',8);
+    doc.text(num(c[3]), ctblX+ctblW-2, y+4, {align:'right'});
     doc.setDrawColor(220,222,228); doc.setLineWidth(0.15);
-    doc.line(ML, y+5.5, ML+cw1+cw2+cw3, y+5.5);
-    y+=5.5;
+    doc.line(ctblX, y+6, ctblX+ctblW, y+6);
+    y+=6;
   });
-  y+=10;
+  // Total de la recapitulación (Total Descuentos + aportes informativos)
+  y+=2;
+  doc.setFillColor(...NAVY); doc.rect(ctblX,y,ctblW,7,'F');
+  hv('bold',8.5); doc.setTextColor(255,255,255);
+  doc.text('TOTAL NÓMINA (Sueldos Brutos)', ctblX+2, y+4.8);
+  doc.text(num(T.bruto), ctblX+ctblW-2, y+4.8, {align:'right'});
+  y+=7+18;
 
-  // ── Firmas ──
-  var firmaH = 28;
-  if(y+firmaH > H-10){ doc.addPage(); drawHeader(); y=30; }
-  var fw = 70;
-  var fx1=ML+10, fx2=ML+10+fw+20, fx3=ML+10+2*(fw+20), fx4=ML+10+3*(fw+20);
+  // ── 4 FIRMAS configurables ──
+  var firmantes = (window.PROPEEP_CONFIG && window.PROPEEP_CONFIG.firmantes) || [
+    {nombre:'PEDRO A. CID MARTINEZ', cargo:'ENCARGADO (A) DE REGISTRO, CONTROL Y NOMINA'},
+    {nombre:'JONEY R. DOTEL COLL', cargo:'DIRECTOR (A) DE RECURSOS HUMANOS'},
+    {nombre:'JESUS MIGUEL OZUNA PAULINO', cargo:'DIRECTOR ADMINISTRATIVO FINANCIERO (INTERINO)'},
+    {nombre:'ROBERT D. POLANCO TEJADA', cargo:'DIRECTOR (A) DE PROYECTOS ESTRATEGICOS Y ESPECIALES DE LA PRESIDENCIA'},
+  ];
+
+  // Asegurar espacio para las firmas; si no, página nueva con header
+  if(y + 30 > H-10){ doc.addPage(); drawHeader(); y=34; }
+
+  var fw = 74;
+  var gap = (ANC - 4*fw)/3; // separación uniforme entre 4 firmas
+  var fxs = [0,1,2,3].map(function(k){ return ML + k*(fw+gap); });
   doc.setDrawColor(...NEGRO); doc.setLineWidth(0.4);
-  [fx1,fx2,fx3,fx4].forEach(function(fx){ doc.line(fx,y,fx+fw,y); });
-  y+=5;
-  hv('normal',7); doc.setTextColor(50,50,50);
-  doc.text('Preparado por:',    fx1, y);
-  doc.text('Aprobado por:',     fx2, y);
-  doc.text('Aprobado por:',     fx3, y);
-  doc.text('Revisado por:',     fx4, y);
-  y+=5;
-  hv('bold',7); doc.setTextColor(...NEGRO);
-  doc.text('Responsable de Nómina',    fx1, y);
-  doc.text('Responsable Financiero',   fx2, y);
-  doc.text('Responsable Institución',  fx3, y);
-  doc.text('Servicios Personales CGR', fx4, y);
-  y+=12;
-  // Segunda fila de firmas
-  var fx5=ML+10, fx6=ML+10+(fw+20)*2;
-  [fx5,fx6].forEach(function(fx){ doc.line(fx,y,fx+fw,y); });
-  y+=5;
-  hv('normal',7); doc.setTextColor(50,50,50);
-  doc.text('Firmas OPCIONALES, según aplique:', fx5-10, y-5);
-  doc.text('Aprobado por:',                    fx5, y);
-  doc.text('Aprobado por:',                    fx6, y);
-  y+=5;
-  hv('bold',7); doc.setTextColor(...NEGRO);
-  doc.text('Resp. Advo. y Financiero adscrita', fx5, y);
-  doc.text('Resp. Institución adscrita',        fx6, y);
+  fxs.forEach(function(fx){ doc.line(fx, y, fx+fw, y); });
+  var ny = y+4.5;
+  firmantes.forEach(function(fm, k){
+    var fx = fxs[k];
+    hv('bold',7.5); doc.setTextColor(...NEGRO);
+    doc.text(fm.nombre||'', fx+fw/2, ny, {align:'center'});
+    hv('normal',6.8); doc.setTextColor(70,70,70);
+    var cargoLines = doc.splitTextToSize(fm.cargo||'', fw);
+    cargoLines.forEach(function(ln, li){
+      doc.text(ln, fx+fw/2, ny+4 + li*3, {align:'center'});
+    });
+  });
 
-  // Footer en todas las páginas
+  // Footer con numeración en todas las páginas
   var totalP = doc.internal.getNumberOfPages();
   for(var p=1;p<=totalP;p++){
     doc.setPage(p);
