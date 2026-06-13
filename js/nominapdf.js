@@ -209,9 +209,10 @@ function npGenerarPDF(){
     return y+8;
   }
 
-  // ── Render pages — altura de fila FIJA, texto centrado verticalmente ──
+  // ── Render pages — alto de fila según contenido, TODO centrado verticalmente ──
   hv('normal',6.8);
-  var ROW_H = 7;   // alto fijo de cada fila
+  var LINE_H = 3.1;   // alto de cada línea de texto
+  var PAD_V  = 2.2;   // padding vertical arriba y abajo
 
   drawHeader();
   var y = drawTableHeader(24);
@@ -219,44 +220,51 @@ function npGenerarPDF(){
   var T = {bruto:0,afp:0,isr:0,sfs:0,otros:0,desc:0,neto:0};
 
   emps.forEach(function(e,i){
-    if(y+ROW_H > H-14){
+    hv('normal',6.8);
+    // Calcular líneas que ocupa nombre y cargo (sin límite artificial)
+    var nomLines = doc.splitTextToSize(e.nombre||'', colWidths.nom-2);
+    var carLines = doc.splitTextToSize(e.cargo||'', colWidths.cargo-2);
+    var maxLines = Math.max(nomLines.length, carLines.length, 1);
+    // Alto de la fila = líneas * altoLínea + padding (mínimo 7mm)
+    var rowH = Math.max(7, maxLines*LINE_H + PAD_V*2);
+
+    if(y+rowH > H-14){
       doc.addPage();
       drawHeader();
       y = drawTableHeader(24);
     }
-    if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ML,y,ANC,ROW_H,'F'); }
-    hv('normal',6.8); doc.setTextColor(...NEGRO);
+    if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ML,y,ANC,rowH,'F'); }
+    doc.setTextColor(...NEGRO);
 
-    // Nombre y cargo: máx 2 líneas, centradas verticalmente en la fila
-    var nomLines = doc.splitTextToSize(e.nombre||'', colWidths.nom-2).slice(0,2);
-    var carLines = doc.splitTextToSize(e.cargo||'', colWidths.cargo-2).slice(0,2);
-    var maxLines = Math.max(nomLines.length, carLines.length, 1);
-    var lineH = 3.0;
-    // Centro vertical: punto de inicio para que el bloque quede centrado
-    var blockH = maxLines * lineH;
-    var startY = y + (ROW_H - blockH)/2 + 2.3;
+    // Centro vertical de la fila
+    var midY = y + rowH/2;
 
-    nomLines.forEach(function(ln, li){ doc.text(ln, C.nom+1, startY + li*lineH); });
-    carLines.forEach(function(ln, li){ doc.text(ln, C.cargo+1, startY + li*lineH); });
+    // Nombre: bloque de N líneas, centrado verticalmente
+    hv('normal',6.8);
+    var nomBlockY = midY - ((nomLines.length-1)*LINE_H)/2 + 1.0;
+    nomLines.forEach(function(ln, li){ doc.text(ln, C.nom+1, nomBlockY + li*LINE_H); });
+    // Cargo: igual
+    var carBlockY = midY - ((carLines.length-1)*LINE_H)/2 + 1.0;
+    carLines.forEach(function(ln, li){ doc.text(ln, C.cargo+1, carBlockY + li*LINE_H); });
 
-    // Resto de columnas centradas en la fila (una línea)
-    var midY = y + ROW_H/2 + 1.1;
-    doc.text(estatus, C.est+1, midY);
-    doc.text(fmtCed(e.cedula||''), C.doc+1, midY);
+    // Columnas de una línea: centradas en midY
+    var cellY = midY + 1.0;
+    doc.text(estatus, C.est+1, cellY);
+    doc.text(fmtCed(e.cedula||''), C.doc+1, cellY);
     var otros = (e.inabi||0) + (e.dep_adic||0);
-    doc.text(num(e.sueldo),    C.bruto+colWidths.bruto-1, midY, {align:'right'});
-    doc.text(num(e.afp),       C.afp+colWidths.afp-1,     midY, {align:'right'});
-    doc.text(num(e.isr),       C.isr+colWidths.isr-1,     midY, {align:'right'});
-    doc.text(num(e.sfs),       C.sfs+colWidths.sfs-1,     midY, {align:'right'});
-    doc.text(num(otros),       C.otros+colWidths.otros-1, midY, {align:'right'});
-    doc.text(num(e.total_desc),C.desc+colWidths.desc-1,   midY, {align:'right'});
-    doc.text(num(e.neto),      C.neto+colWidths.neto-1,   midY, {align:'right'});
+    doc.text(num(e.sueldo),    C.bruto+colWidths.bruto-1, cellY, {align:'right'});
+    doc.text(num(e.afp),       C.afp+colWidths.afp-1,     cellY, {align:'right'});
+    doc.text(num(e.isr),       C.isr+colWidths.isr-1,     cellY, {align:'right'});
+    doc.text(num(e.sfs),       C.sfs+colWidths.sfs-1,     cellY, {align:'right'});
+    doc.text(num(otros),       C.otros+colWidths.otros-1, cellY, {align:'right'});
+    doc.text(num(e.total_desc),C.desc+colWidths.desc-1,   cellY, {align:'right'});
+    doc.text(num(e.neto),      C.neto+colWidths.neto-1,   cellY, {align:'right'});
 
     doc.setDrawColor(220,222,228); doc.setLineWidth(0.15);
-    doc.line(ML, y+ROW_H, W-MR, y+ROW_H);
+    doc.line(ML, y+rowH, W-MR, y+rowH);
     T.bruto+=e.sueldo; T.afp+=e.afp; T.isr+=e.isr;
     T.sfs+=e.sfs; T.otros+=otros; T.desc+=e.total_desc; T.neto+=e.neto;
-    y+=ROW_H;
+    y+=rowH;
   });
 
   // Total General row
