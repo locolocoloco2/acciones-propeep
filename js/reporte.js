@@ -2,6 +2,18 @@
 // REPORTE DE NOVEDADES — Por tipo de nómina
 // ══════════════════════════════════════════
 
+// ── Helpers compartidos ──
+function repSt(id, msg, tipo){
+  var el = document.getElementById('rep-'+id);
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'status ' + tipo;
+  el.style.display = 'block';
+}
+
+var repFilas = [];   // filas editables (módulo de tabla manual)
+
+
 // Mapeo: naturaleza (clave Supabase) → {tipo, concepto}
 const REP_MAPEO = {
   nom_ord:        {tipo:'ENTRADA', concepto:'INGRESO'},
@@ -33,8 +45,8 @@ const REP_NAT_MAP = {
   'Invalidez':'invalidez','Suspensión':'suspension_disc',
 };
 
-let repNomina     = {};   // cedula → row de la nómina cargada
-let repFilas      = [];   // filas del reporte editable
+repNomina = {};  // reset
+repFilas = [];   // reset
 let repAcciones   = {};   // cedula → acción del mes en Supabase
 let repFechaEdit  = '';
 
@@ -597,7 +609,7 @@ function repGenerarResumenPDF(){
   doc.text('PROPEEP · Dirección General de Proyectos Estratégicos y Especiales de la Presidencia · División de Nómina', W/2, fy, {align:'center'});
 
   const tipo = (document.getElementById('rep-tipo-nomina')||{value:'Nomina'}).value;
-  const per  = (document.getElementById('rep-periodo')||{value:''}).value.trim() || new Date().toISOString().slice(0,7);
+  const per  = window._novPeriodoB || new Date().toISOString().slice(0,7);
   doc.save('Resumen_Nomina_'+tipo+'_'+per+'.pdf');
   repSt('pdf-status','Resumen Financiero exportado correctamente.','ok');
 }
