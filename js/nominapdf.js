@@ -115,180 +115,251 @@ function npGenerarPDF(){
   if(!npNomina.length){ npSt('pdf-status','Carga la nómina primero.','err'); return; }
 
   var {jsPDF} = window.jspdf;
-  // LEGAL HORIZONTAL: 355.6 x 215.9 mm
   var doc = new jsPDF({orientation:'landscape',unit:'mm',format:'legal'});
-  var W=355.6, H=215.9, ML=10, MR=10, ANC=W-ML-MR;
+  var W=355.6, H=215.9, ML=8, MR=8, ANC=W-ML-MR;
   var NAVY=[13,30,63], NEGRO=[20,20,20];
 
   function hv(style,sz){ doc.setFont('helvetica',style); doc.setFontSize(sz); }
 
-  var institucion = (document.getElementById('np-institucion')||{value:''}).value.trim();
-  var subtitulo   = (document.getElementById('np-subtitulo')||{value:''}).value.trim();
-  var coletilla   = (document.getElementById('np-coletilla')||{value:''}).value.trim();
-  var tipoNom     = (document.getElementById('np-tipo')||{value:'Fijo'}).value;
-  var periodo     = window._npPeriodo || new Date().toISOString().slice(0,7);
-  var tipoLabel   = {Fijo:'Fijo',Temporal:'Temporal',Caracter_Eventual:'Carácter Eventual',Compensacion_Seguridad:'Compensación y Seguridad'}[tipoNom]||tipoNom;
-  var estatusCorto= {Fijo:'Fijo',Temporal:'Temporal',Caracter_Eventual:'Caract. Eventual',Compensacion_Seguridad:'Comp. Seguridad'}[tipoNom]||tipoNom;
+  var tipoNom   = (document.getElementById('np-tipo')||{value:'Fijo'}).value;
+  var periodo   = window._npPeriodo || new Date().toISOString().slice(0,7);
+
+  // Labels automáticos según tipo
+  var tipoLabels = {
+    Fijo:                  {estatus:'Fijo',      coletilla:'NÓMINA DE SUELDOS A PERSONAL FIJO'},
+    Temporal:              {estatus:'Temporal',  coletilla:'NÓMINA DE SUELDOS A PERSONAL TEMPORAL'},
+    Caracter_Eventual:     {estatus:'Caract. Eventual', coletilla:'NÓMINA DE SUELDOS A PERSONAL DE CARÁCTER EVENTUAL'},
+    Compensacion_Seguridad:{estatus:'Comp. Seg.',coletilla:'COMPENSACIÓN SEGURIDAD MILITAR'},
+  };
+  var lbl   = tipoLabels[tipoNom] || {estatus:tipoNom, coletilla:'NÓMINA DE SUELDOS'};
+  var estatus  = lbl.estatus;
+  // Período en español para coletilla: "MAYO 2026" etc
+  var meses = ['','ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  var periodoStr = periodo; // e.g. "2026-05"
+  var mesNum = parseInt((periodo||'').split('-')[1]||0);
+  var anioStr= (periodo||'').split('-')[0]||'';
+  var mesStr = meses[mesNum]||periodo;
+  var coletilla = lbl.coletilla + (mesStr ? ', '+mesStr+' '+anioStr : '');
+
+  var institucion = 'DIRECCIÓN GENERAL DE PROYECTOS ESTRATÉGICOS Y ESPECIALES DE LA PRESIDENCIA';
 
   // Orden alfabético
   var emps = npNomina.slice().sort(function(a,b){ return (a.nombre||'').localeCompare(b.nombre||''); });
 
-  // Columnas (mm) — estilo SIGEF
+  // ── Columnas (mm) — sin "Total Ingresos", ajustadas para legal horizontal ──
+  // Ancho total disponible: 339.6mm
+  // Distribución: Nombre(68) Cargo(56) Estatus(22) Doc(28) Bruto(26) AFP(22) ISR(24) SFS(22) Otros(22) TotalDesc(26) Neto(26)
+  // Suma: 68+56+22+28+26+22+24+22+22+26+26 = 342 ≈ 339.6 (ajustamos)
   var C = {
-    nom: ML,
-    cargo: ML+78,
-    est: ML+140,
-    doc: ML+170,
-    bruto: ML+198,
-    ing: ML+222,
-    afp: ML+246,
-    isr: ML+268,
-    sfs: ML+290,
-    otros: ML+312,
-    desc: ML+330,
-    neto: ANC+ML,
+    nom:    ML,
+    cargo:  ML+67,
+    est:    ML+122,
+    doc:    ML+144,
+    bruto:  ML+172,
+    afp:    ML+198,
+    isr:    ML+220,
+    sfs:    ML+244,
+    otros:  ML+266,
+    desc:   ML+288,
+    neto:   ML+314,
+  };
+  var colWidths = {
+    nom:67, cargo:55, est:22, doc:28, bruto:26, afp:22, isr:24, sfs:22, otros:22, desc:26, neto:25
   };
 
+  function num(n){ return (n||0).toLocaleString('es-DO',{minimumFractionDigits:2}); }
+
+  var totalPages = 0;  // will set after
   var pageNum = 0;
-  function header(){
+
+  function drawHeader(){
     pageNum++;
     // Logo
-    try{ doc.addImage('data:image/jpeg;base64,'+LOGO_B64,'JPEG',ML,6,18,15); }catch(e){}
+    try{ doc.addImage('data:image/jpeg;base64,'+LOGO_B64,'JPEG',ML,4,16,13); }catch(e){}
+    // Título centrado
     hv('bold',13); doc.setTextColor(...NEGRO);
-    doc.text('Reporte de Nómina', W/2, 11, {align:'center'});
-    hv('normal',8); doc.setTextColor(60,60,60);
-    doc.text(subtitulo+' - '+periodo, W/2, 16, {align:'center'});
-    doc.text('Concepto Pago Sueldo: '+tipoLabel+' Correspondiente a '+periodo, W/2, 20, {align:'center'});
-    // Fecha impresión derecha
+    doc.text('Reporte de Nómina', W/2, 10, {align:'center'});
+    hv('normal',7.5); doc.setTextColor(50,50,50);
+    doc.text('Nómina Normal - '+periodoStr+' - PROPEEP - '+institucion, W/2, 15, {align:'center'});
+    doc.text('Concepto Pago Sueldo: '+estatus+' Correspondiente al mes de '+mesStr+' '+anioStr, W/2, 19, {align:'center'});
+    // Fecha + página
     hv('normal',7); doc.setTextColor(90,90,90);
     var hoy = new Date();
-    doc.text('Fecha Impresión: '+hoy.toLocaleDateString('es-DO')+' '+hoy.toLocaleTimeString('es-DO'), W-MR, 9, {align:'right'});
+    doc.text('Fecha Impresión: '+hoy.toLocaleDateString('es-DO')+' '+hoy.toLocaleTimeString('es-DO'), W-MR, 8, {align:'right'});
     doc.text('Pág.: '+pageNum, W-MR, 13, {align:'right'});
-
-    // Cabecera de tabla
-    var hy = 26;
-    doc.setFillColor(...NAVY); doc.rect(ML,hy,ANC,8,'F');
-    hv('bold',7); doc.setTextColor(255,255,255);
-    doc.text('Servidor Público', C.nom+1, hy+5);
-    doc.text('Cargo', C.cargo, hy+5);
-    doc.text('Estatus', C.est, hy+5);
-    doc.text('Documento', C.doc, hy+5);
-    doc.text('Salario Bruto', C.bruto+18, hy+5, {align:'right'});
-    doc.text('Total Ing.', C.ing+18, hy+5, {align:'right'});
-    doc.text('AFP', C.afp+16, hy+5, {align:'right'});
-    doc.text('ISR', C.isr+16, hy+5, {align:'right'});
-    doc.text('SFS', C.sfs+16, hy+5, {align:'right'});
-    doc.text('Otros Desc.', C.otros+14, hy+5, {align:'right'});
-    doc.text('Total Desc.', C.desc+16, hy+5, {align:'right'});
-    doc.text('Neto', C.neto, hy+5, {align:'right'});
-    return hy+8;
+    // Coletilla
+    hv('normal',6.5); doc.setTextColor(60,60,60);
+    doc.text('Coletilla: '+coletilla, ML, 22);
   }
 
-  function num(n){ return n.toLocaleString('es-DO',{minimumFractionDigits:2}); }
+  function drawTableHeader(y){
+    doc.setFillColor(...NAVY); doc.rect(ML,y,ANC,8,'F');
+    hv('bold',6.8); doc.setTextColor(255,255,255);
+    doc.text('Servidor Público',            C.nom+1,          y+5.2);
+    doc.text('Cargo',                       C.cargo+1,        y+5.2);
+    doc.text('Est.',                        C.est+1,          y+5.2);
+    doc.text('Documento',                   C.doc+1,          y+5.2);
+    doc.text('Salario Bruto',               C.bruto+colWidths.bruto-1,  y+5.2, {align:'right'});
+    doc.text('AFP',                         C.afp+colWidths.afp-1,      y+5.2, {align:'right'});
+    doc.text('ISR',                         C.isr+colWidths.isr-1,      y+5.2, {align:'right'});
+    doc.text('SFS',                         C.sfs+colWidths.sfs-1,      y+5.2, {align:'right'});
+    doc.text('Otros Desc.',                 C.otros+colWidths.otros-1,  y+5.2, {align:'right'});
+    doc.text('Total Desc.',                 C.desc+colWidths.desc-1,    y+5.2, {align:'right'});
+    doc.text('Neto',                        C.neto+colWidths.neto-1,    y+5.2, {align:'right'});
+    return y+8;
+  }
 
-  var y = header();
-  var rh = 4.6;
+  function measureRowHeight(e){
+    // Measure how many lines nombre and cargo need
+    var nomLines = doc.splitTextToSize(e.nombre||'', colWidths.nom-2).length;
+    var carLines = doc.splitTextToSize(e.cargo||'', colWidths.cargo-2).length;
+    var lines = Math.max(nomLines, carLines, 1);
+    return Math.max(5, lines * 3.4 + 2);
+  }
 
-  // Totales generales
-  var T = {bruto:0,ing:0,afp:0,isr:0,sfs:0,otros:0,desc:0,neto:0};
+  // ── Render pages ──
+  drawHeader();
+  var y = drawTableHeader(24);
+
+  var T = {bruto:0,afp:0,isr:0,sfs:0,otros:0,desc:0,neto:0};
 
   emps.forEach(function(e,i){
-    if(y > H-20){ doc.addPage(); y = header(); }
+    hv('normal',6.8);
+    var rh = measureRowHeight(e);
+    if(y+rh > H-14){
+      doc.addPage();
+      drawHeader();
+      y = drawTableHeader(24);
+    }
     if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ML,y,ANC,rh,'F'); }
+    doc.setTextColor(...NEGRO);
+    // Multi-line text for nombre and cargo
+    var nomLines = doc.splitTextToSize(e.nombre||'', colWidths.nom-2);
+    var carLines = doc.splitTextToSize(e.cargo||'', colWidths.cargo-2);
+    var textY = y + 3.2;
     hv('normal',6.8); doc.setTextColor(...NEGRO);
-    doc.text((e.nombre||'').substring(0,46), C.nom+1, y+3.2);
-    doc.text((e.cargo||'').substring(0,36), C.cargo, y+3.2);
-    doc.text(estatusCorto, C.est, y+3.2);
-    doc.text(fmtCed(e.cedula||''), C.doc, y+3.2);
-    var otros = e.inabi + e.dep_adic;  // RD$25 INABI + Dep Adicional
-    doc.text(num(e.sueldo), C.bruto+18, y+3.2, {align:'right'});
-    doc.text(num(e.sueldo), C.ing+18, y+3.2, {align:'right'});
-    doc.text(num(e.afp), C.afp+16, y+3.2, {align:'right'});
-    doc.text(num(e.isr), C.isr+16, y+3.2, {align:'right'});
-    doc.text(num(e.sfs), C.sfs+16, y+3.2, {align:'right'});
-    doc.text(num(otros), C.otros+14, y+3.2, {align:'right'});
-    doc.text(num(e.total_desc), C.desc+16, y+3.2, {align:'right'});
-    doc.text(num(e.neto), C.neto, y+3.2, {align:'right'});
-    doc.setDrawColor(228,230,235); doc.setLineWidth(0.1);
-    doc.line(ML,y+rh,W-MR,y+rh);
-    T.bruto+=e.sueldo; T.ing+=e.sueldo; T.afp+=e.afp; T.isr+=e.isr;
+    doc.text(nomLines, C.nom+1, textY);
+    doc.text(carLines, C.cargo+1, textY);
+    doc.text(estatus, C.est+1, textY);
+    doc.text(fmtCed(e.cedula||''), C.doc+1, textY);
+    var otros = (e.inabi||0) + (e.dep_adic||0);
+    doc.text(num(e.sueldo),    C.bruto+colWidths.bruto-1, textY, {align:'right'});
+    doc.text(num(e.afp),       C.afp+colWidths.afp-1,     textY, {align:'right'});
+    doc.text(num(e.isr),       C.isr+colWidths.isr-1,     textY, {align:'right'});
+    doc.text(num(e.sfs),       C.sfs+colWidths.sfs-1,     textY, {align:'right'});
+    doc.text(num(otros),       C.otros+colWidths.otros-1, textY, {align:'right'});
+    doc.text(num(e.total_desc),C.desc+colWidths.desc-1,   textY, {align:'right'});
+    doc.text(num(e.neto),      C.neto+colWidths.neto-1,   textY, {align:'right'});
+    // Row separator
+    doc.setDrawColor(220,222,228); doc.setLineWidth(0.15);
+    doc.line(ML, y+rh, W-MR, y+rh);
+    T.bruto+=e.sueldo; T.afp+=e.afp; T.isr+=e.isr;
     T.sfs+=e.sfs; T.otros+=otros; T.desc+=e.total_desc; T.neto+=e.neto;
     y+=rh;
   });
 
-  // Fila Total General
-  if(y > H-16){ doc.addPage(); y=header(); }
-  doc.setFillColor(...NAVY); doc.rect(ML,y,ANC,6,'F');
+  // Total General row
+  if(y+7 > H-14){ doc.addPage(); drawHeader(); y=24; }
+  doc.setFillColor(...NAVY); doc.rect(ML,y,ANC,7,'F');
   hv('bold',7); doc.setTextColor(255,255,255);
-  doc.text('TOTAL GENERAL ('+emps.length+')', C.nom+1, y+4);
-  doc.text(num(T.bruto), C.bruto+18, y+4, {align:'right'});
-  doc.text(num(T.ing), C.ing+18, y+4, {align:'right'});
-  doc.text(num(T.afp), C.afp+16, y+4, {align:'right'});
-  doc.text(num(T.isr), C.isr+16, y+4, {align:'right'});
-  doc.text(num(T.sfs), C.sfs+16, y+4, {align:'right'});
-  doc.text(num(T.otros), C.otros+14, y+4, {align:'right'});
-  doc.text(num(T.desc), C.desc+16, y+4, {align:'right'});
-  doc.text(num(T.neto), C.neto, y+4, {align:'right'});
-  y+=6+8;
+  doc.text('TOTAL GENERAL  ('+emps.length+' servidores)', C.nom+1, y+4.8);
+  doc.text(num(T.bruto), C.bruto+colWidths.bruto-1, y+4.8, {align:'right'});
+  doc.text(num(T.afp),   C.afp+colWidths.afp-1,     y+4.8, {align:'right'});
+  doc.text(num(T.isr),   C.isr+colWidths.isr-1,     y+4.8, {align:'right'});
+  doc.text(num(T.sfs),   C.sfs+colWidths.sfs-1,     y+4.8, {align:'right'});
+  doc.text(num(T.otros), C.otros+colWidths.otros-1, y+4.8, {align:'right'});
+  doc.text(num(T.desc),  C.desc+colWidths.desc-1,   y+4.8, {align:'right'});
+  doc.text(num(T.neto),  C.neto+colWidths.neto-1,   y+4.8, {align:'right'});
+  y+=7;
 
-  // ── Cuadro de conceptos ──
-  // INABI(25) y servicios funerarios se separan; aquí presentamos los conceptos disponibles
-  var sumInabi   = npNomina.reduce(function(t,e){return t+e.inabi;},0);
-  var sumDepAdic = npNomina.reduce(function(t,e){return t+e.dep_adic;},0);
-  var sumSfsEmpl = npNomina.reduce(function(t,e){return t+e.sfs_empl;},0);
-  var sumSsEmpl  = npNomina.reduce(function(t,e){return t+e.ss_empl;},0);
-  var sumRiesgo  = npNomina.reduce(function(t,e){return t+e.riesgo;},0);
+  // ── Cuadro de conceptos — en su propia página con header ──
+  doc.addPage();
+  drawHeader();
+  y = 30;
+
+  var sumInabi   = npNomina.reduce(function(t,e){return t+(e.inabi||0);},0);
+  var sumDepAdic = npNomina.reduce(function(t,e){return t+(e.dep_adic||0);},0);
+  var sumSfsEmpl = npNomina.reduce(function(t,e){return t+(e.sfs_empl||0);},0);
+  var sumSsEmpl  = npNomina.reduce(function(t,e){return t+(e.ss_empl||0);},0);
+  var sumRiesgo  = npNomina.reduce(function(t,e){return t+(e.riesgo||0);},0);
 
   var conceptos = [
-    ['100-08 - Salario', T.bruto],
-    ['500-01 - AFP', T.afp],
-    ['500-02 - Impuesto Sobre la Renta', T.isr],
-    ['500-03 - Seguro de Vida (INABI)', sumInabi],
-    ['510-02 - Seguro Familiar de Salud (SFS)', T.sfs],
-    ['510-03 - SFS Padres / Dependientes Adicionales', sumDepAdic],
-    ['900-01 - Aporte Fondos de Pensiones (Empleador)', sumSsEmpl],
-    ['900-02 - Aporte Seguro de Riesgo Laboral', sumRiesgo],
-    ['900-03 - Aporte Seguro Familiar de Salud (Empleador)', sumSfsEmpl],
+    ['100-08',  'Salario',                              T.bruto],
+    ['500-01',  'AFP',                                  T.afp],
+    ['500-02',  'Impuesto Sobre la Renta',              T.isr],
+    ['500-03',  'Seguro de Vida (INABI)',                sumInabi],
+    ['510-02',  'Seguro Familiar de Salud (SFS)',        T.sfs],
+    ['510-03',  'SFS Padres / Dependientes Adicionales', sumDepAdic],
+    ['900-01',  'Aporte Fondos de Pensiones (Empleador)',sumSsEmpl],
+    ['900-02',  'Aporte Seguro de Riesgo Laboral',      sumRiesgo],
+    ['900-03',  'Aporte Seguro Familiar de Salud (Empleador)', sumSfsEmpl],
   ];
 
-  if(y > H-50){ doc.addPage(); y=20; }
-  hv('bold',8); doc.setTextColor(...NAVY);
-  doc.text('CONCEPTOS', ML, y); y+=2;
-  doc.setFillColor(...NAVY); doc.rect(ML,y,140,6,'F');
-  hv('bold',7); doc.setTextColor(255,255,255);
-  doc.text('Concepto', ML+2, y+4);
-  doc.text('Monto (RD$)', ML+138, y+4, {align:'right'});
-  y+=6;
+  // Header de conceptos tabla
+  var cw1=40, cw2=160, cw3=50; // Código | Concepto | Monto
+  doc.setFillColor(...NAVY); doc.rect(ML,y,cw1+cw2+cw3,7,'F');
+  hv('bold',7.5); doc.setTextColor(255,255,255);
+  doc.text('Código SIGEF', ML+2,          y+5);
+  doc.text('Beneficiario / Concepto',     ML+cw1+2,    y+5);
+  doc.text('Monto (RD$)', ML+cw1+cw2+cw3-2, y+5, {align:'right'});
+  y+=7;
+
   conceptos.forEach(function(c,i){
-    if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ML,y,140,5,'F'); }
-    hv('normal',7); doc.setTextColor(...NEGRO);
-    doc.text(c[0], ML+2, y+3.4);
-    doc.text(num(c[1]), ML+138, y+3.4, {align:'right'});
-    y+=5;
+    if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ML,y,cw1+cw2+cw3,5.5,'F'); }
+    hv('normal',7.5); doc.setTextColor(...NEGRO);
+    doc.text(c[0],    ML+2,              y+3.8);
+    doc.text(c[1],    ML+cw1+2,         y+3.8);
+    doc.text(num(c[2]), ML+cw1+cw2+cw3-2, y+3.8, {align:'right'});
+    doc.setDrawColor(220,222,228); doc.setLineWidth(0.15);
+    doc.line(ML, y+5.5, ML+cw1+cw2+cw3, y+5.5);
+    y+=5.5;
   });
+  y+=10;
 
-  // ── Firmas (nunca solas) ──
-  var firmaH = 30;
-  if(y + firmaH > H-10){ doc.addPage(); y=24; }
-  else { y+=12; }
-  var fx1=ML+10, fx2=ML+110, fx3=ML+210;
+  // ── Firmas ──
+  var firmaH = 28;
+  if(y+firmaH > H-10){ doc.addPage(); drawHeader(); y=30; }
+  var fw = 70;
+  var fx1=ML+10, fx2=ML+10+fw+20, fx3=ML+10+2*(fw+20), fx4=ML+10+3*(fw+20);
   doc.setDrawColor(...NEGRO); doc.setLineWidth(0.4);
-  [fx1,fx2,fx3].forEach(function(fx){ doc.line(fx, y, fx+70, y); });
-  hv('normal',7.5); doc.setTextColor(...NEGRO);
-  doc.text('Preparado por', fx1, y+5);
-  doc.text('Revisado por', fx2, y+5);
-  doc.text('Aprobado por', fx3, y+5);
-  hv('bold',7.5);
-  doc.text('Responsable de Nómina', fx1, y+9);
-  doc.text('Responsable Financiero', fx2, y+9);
-  doc.text('Responsable Institución', fx3, y+9);
+  [fx1,fx2,fx3,fx4].forEach(function(fx){ doc.line(fx,y,fx+fw,y); });
+  y+=5;
+  hv('normal',7); doc.setTextColor(50,50,50);
+  doc.text('Preparado por:',    fx1, y);
+  doc.text('Aprobado por:',     fx2, y);
+  doc.text('Aprobado por:',     fx3, y);
+  doc.text('Revisado por:',     fx4, y);
+  y+=5;
+  hv('bold',7); doc.setTextColor(...NEGRO);
+  doc.text('Responsable de Nómina',    fx1, y);
+  doc.text('Responsable Financiero',   fx2, y);
+  doc.text('Responsable Institución',  fx3, y);
+  doc.text('Servicios Personales CGR', fx4, y);
+  y+=12;
+  // Segunda fila de firmas
+  var fx5=ML+10, fx6=ML+10+(fw+20)*2;
+  [fx5,fx6].forEach(function(fx){ doc.line(fx,y,fx+fw,y); });
+  y+=5;
+  hv('normal',7); doc.setTextColor(50,50,50);
+  doc.text('Firmas OPCIONALES, según aplique:', fx5-10, y-5);
+  doc.text('Aprobado por:',                    fx5, y);
+  doc.text('Aprobado por:',                    fx6, y);
+  y+=5;
+  hv('bold',7); doc.setTextColor(...NEGRO);
+  doc.text('Resp. Advo. y Financiero adscrita', fx5, y);
+  doc.text('Resp. Institución adscrita',        fx6, y);
 
-  // Footer
-  var fy=H-6;
-  doc.setDrawColor(...NAVY); doc.setLineWidth(0.3); doc.line(ML,fy-3,W-MR,fy-3);
-  hv('normal',6.5); doc.setTextColor(110,110,110);
-  doc.text('Coletilla: '+coletilla+' · '+institucion, ML, fy);
+  // Footer en todas las páginas
+  var totalP = doc.internal.getNumberOfPages();
+  for(var p=1;p<=totalP;p++){
+    doc.setPage(p);
+    var fy=H-5;
+    doc.setDrawColor(...NAVY); doc.setLineWidth(0.3); doc.line(ML,fy-3,W-MR,fy-3);
+    hv('normal',6.5); doc.setTextColor(110,110,110);
+    doc.text('Coletilla: '+coletilla, ML, fy);
+    doc.text('Pág. '+p+' / '+totalP, W-MR, fy, {align:'right'});
+  }
 
-  doc.save('Reporte_Nomina_'+tipoNom+'_'+periodo+'.pdf');
+  doc.save('Reporte_Nomina_'+tipoNom+'_'+periodoStr+'.pdf');
   npSt('pdf-status','Reporte de Nómina exportado correctamente.','ok');
 }
