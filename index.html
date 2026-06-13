@@ -62,6 +62,7 @@
     <div class="nav-label">Herramientas</div>
     <div class="tab" id="tab-isr" onclick="switchTab('isr')" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11.01"/><line x1="12" y1="11" x2="12" y2="11.01"/><line x1="16" y1="11" x2="16" y2="11.01"/><line x1="8" y1="15" x2="8" y2="15.01"/><line x1="12" y1="15" x2="12" y2="15.01"/><line x1="16" y1="15" x2="16" y2="18"/></svg><span>Calculadora ISR</span></div>
     <div class="tab" id="tab-reporte" onclick="switchTab('reporte')" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Análisis de Nómina</span></div>
+    <div class="tab" id="tab-nominapdf" onclick="switchTab('nominapdf')" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg><span>Reporte de Nómina</span></div>
     <div class="tab" id="tab-regalia" onclick="switchTab('regalia')" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg><span>Regalía Pascual</span></div>
   </div>
 </nav>
@@ -380,6 +381,59 @@
   </div>
 </div>
 
+<div id="panel-nominapdf" class="panel">
+  <div class="card">
+    <div class="card-title">Reporte de Nómina — Formato Oficial</div>
+    <div class="tinfo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div>Carga el Excel de la nómina del mes. Genera un reporte oficial en PDF tamaño <strong>legal horizontal</strong>, con los empleados ordenados alfabéticamente y el cuadro de conceptos al final.</div>
+    </div>
+    <div class="grid2">
+      <div><label>Tipo de Nómina (Estatus)</label>
+        <select id="np-tipo">
+          <option value="Fijo">Fijo</option>
+          <option value="Temporal">Temporal</option>
+          <option value="Caracter_Eventual">Carácter Eventual</option>
+          <option value="Compensacion_Seguridad">Compensación y Seguridad</option>
+        </select>
+      </div>
+      <div><label>Institución / Encabezado</label>
+        <input type="text" id="np-institucion" value="DIRECCION GENERAL DE PROYECTOS ESTRATEGICOS Y ESPECIALES DE LA PRESIDENCIA">
+      </div>
+      <div><label>Subtítulo (concepto del pago)</label>
+        <input type="text" id="np-subtitulo" value="Nómina Normal - PROPEEP - Definitiva">
+      </div>
+      <div><label>Coletilla (pie del concepto)</label>
+        <input type="text" id="np-coletilla" value="PAGO NÓMINA DE SUELDOS AL PERSONAL FIJO">
+      </div>
+      <div class="span2">
+        <label>Archivo de Nómina (.xlsx)</label>
+        <label for="np-fi" class="nov-upload-zone" id="np-zona" style="padding:24px"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="npOnDrop(event)">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9aa3b0" stroke-width="1.5" style="margin-bottom:6px"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <p id="np-label">Haz clic o arrastra el Excel de la nómina</p>
+        </label>
+        <input type="file" id="np-fi" accept=".xlsx,.xls" style="display:none" onchange="npHandle(this)">
+      </div>
+    </div>
+    <div id="np-status" class="status" style="display:none"></div>
+  </div>
+
+  <div id="np-preview" style="display:none">
+    <div class="card">
+      <div class="card-title">Resumen de la Nómina Cargada</div>
+      <div id="np-resumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px"></div>
+    </div>
+    <div class="actions-bar">
+      <button class="btn btn-outline" onclick="npGuardar()">Guardar en BD</button>
+      <button class="btn btn-primary" onclick="npGenerarPDF()">Exportar Reporte PDF</button>
+    </div>
+    <div id="np-pdf-status" class="status" style="display:none"></div>
+  </div>
+</div>
+
 <div id="panel-regalia" class="panel">
   <div class="card">
     <div class="card-title">Regalía Pascual RD — Art. 219 Código de Trabajo</div>
@@ -509,6 +563,7 @@
 <script src="js/isr.js"></script>
 <script src="js/novedades.js"></script>
 <script src="js/reporte.js"></script>
+<script src="js/nominapdf.js"></script>
 <script src="js/regalia.js"></script>
 <script src="js/init.js"></script>
 </body>

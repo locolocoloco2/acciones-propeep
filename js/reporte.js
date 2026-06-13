@@ -328,7 +328,6 @@ async function repGuardarNomina(){
 
 // ── Generar PDF ──
 function repGenerarPDF(){
-  // Pull data from novResultado (unified module)
   var res = window.novResultado;
   if(!res){ repSt('pdf-status','Compara los períodos primero.','err'); return; }
 
@@ -347,84 +346,105 @@ function repGenerarPDF(){
   var periodoB  = window._novPeriodoB || '';
 
   var {jsPDF} = window.jspdf;
-  var doc = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
-  var W=216, H=279, ML=14, MR=14, ANC=W-ML-MR;
+  // HORIZONTAL (landscape) tamaño carta
+  var doc = new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
+  var W=279, H=216, ML=14, MR=14, ANC=W-ML-MR;
   var NAVY=[13,30,63], ROJO=[140,18,36], NEGRO=[20,20,20];
 
-  function tm(style,sz){ doc.setFont('times',style); doc.setFontSize(sz); }
   function hv(style,sz){ doc.setFont('helvetica',style); doc.setFontSize(sz); }
 
   try{ doc.addImage('data:image/jpeg;base64,'+LOGO_B64,'JPEG',W-MR-26,6,26,22); }catch(e){}
 
-  hv('bold',11); doc.setTextColor(...NAVY);
-  doc.text('PROYECTOS ESTRATEGICOS Y PROGRAMAS ESPECIALES DE LA PR', ML, 12);
+  hv('bold',12); doc.setTextColor(...NAVY);
+  doc.text('PROYECTOS ESTRATEGICOS Y PROGRAMAS ESPECIALES DE LA PRESIDENCIA', ML, 12);
   hv('bold',11);
-  doc.text(titulo + (periodoB?' — '+periodoB:''), ML, 20);
-  doc.setLineWidth(0.5); doc.setDrawColor(...NAVY); doc.line(ML,24,W-MR-28,24);
+  doc.text(titulo + (periodoB?' — '+periodoB:''), ML, 19);
+  doc.setLineWidth(0.5); doc.setDrawColor(...NAVY); doc.line(ML,23,W-MR-28,23);
 
-  var y = 32;
-  var COL = {id:ML, ced:ML+8, nom:ML+30, car:ML+88, mon:ML+136, fec:ML+156, con:ML+178};
+  var y = 31;
+  // Columnas horizontales — más espacio
+  var COL = {id:ML, ced:ML+10, nom:ML+42, car:ML+125, mon:ML+200, fec:ML+218, con:ML+238};
+
+  function rowHeight(){ return 5.5; }
 
   function drawSec(label, rows, colMonto){
     if(!rows.length) return;
-    hv('bold',9.5); doc.setTextColor(...NEGRO);
-    doc.text(label, ML, y); y+=4;
-    doc.setFillColor(...NAVY); doc.rect(ML,y,ANC,6.5,'F');
-    hv('bold',7.5); doc.setTextColor(255,255,255);
-    doc.text('ID',COL.id+1,y+4.5); doc.text('CEDULA',COL.ced,y+4.5);
-    doc.text('NOMBRE',COL.nom,y+4.5); doc.text('CARGO',COL.car,y+4.5);
-    doc.text(colMonto||'SUELDO',COL.mon,y+4.5);
-    doc.text('CONCEPTO',COL.con,y+4.5);
-    y+=6.5;
+    // Verificar espacio para título + header + al menos 1 fila
+    if(y > H-30){ doc.addPage(); y=18; }
+    hv('bold',10); doc.setTextColor(...NEGRO);
+    doc.text(label, ML, y); y+=4.5;
+    doc.setFillColor(...NAVY); doc.rect(ML,y,ANC,7,'F');
+    hv('bold',8); doc.setTextColor(255,255,255);
+    doc.text('ID',COL.id+1,y+4.7); doc.text('CEDULA',COL.ced,y+4.7);
+    doc.text('NOMBRE',COL.nom,y+4.7); doc.text('CARGO',COL.car,y+4.7);
+    doc.text(colMonto||'SUELDO',COL.mon+22,y+4.7,{align:'right'});
+    doc.text('FECHA',COL.fec,y+4.7);
+    doc.text('CONCEPTO',COL.con,y+4.7);
+    y+=7;
     var total=0;
     rows.forEach(function(e,i){
-      if(y>H-42){ doc.addPage(); y=18; }
-      if(i%2===0){ doc.setFillColor(242,243,245); doc.rect(ML,y,ANC,5.5,'F'); }
-      hv('normal',7.5); doc.setTextColor(...NEGRO);
+      if(y>H-26){ doc.addPage(); y=18;
+        // repetir header en página nueva
+        doc.setFillColor(...NAVY); doc.rect(ML,y,ANC,7,'F');
+        hv('bold',8); doc.setTextColor(255,255,255);
+        doc.text('ID',COL.id+1,y+4.7); doc.text('CEDULA',COL.ced,y+4.7);
+        doc.text('NOMBRE',COL.nom,y+4.7); doc.text('CARGO',COL.car,y+4.7);
+        doc.text(colMonto||'SUELDO',COL.mon+22,y+4.7,{align:'right'});
+        doc.text('FECHA',COL.fec,y+4.7); doc.text('CONCEPTO',COL.con,y+4.7);
+        y+=7;
+      }
+      if(i%2===0){ doc.setFillColor(242,243,245); doc.rect(ML,y,ANC,rowHeight(),'F'); }
+      hv('normal',8); doc.setTextColor(...NEGRO);
       doc.text(String(i+1), COL.id+1, y+4);
-      doc.text(fmtCed(e.cedula||'').substring(0,14), COL.ced, y+4);
-      doc.text((e.nombre||'').substring(0,30), COL.nom, y+4);
-      doc.text((e.cargo||'').substring(0,22), COL.car, y+4);
+      doc.text(fmtCed(e.cedula||''), COL.ced, y+4);
+      doc.text((e.nombre||'').substring(0,48), COL.nom, y+4);
+      doc.text((e.cargo||'').substring(0,40), COL.car, y+4);
       var s = e.sueldo_bruto||e.sueldo||0;
-      doc.text(s.toLocaleString('es-DO',{minimumFractionDigits:2}), COL.mon+20, y+4, {align:'right'});
+      doc.text(s.toLocaleString('es-DO',{minimumFractionDigits:2}), COL.mon+22, y+4, {align:'right'});
+      doc.text(e.fecha||'', COL.fec, y+4);
       var conc = e.concepto || (colMonto==='MONTO'?'EXCLUSION DE NOMINA':'INGRESO');
-      doc.text(conc.substring(0,18), COL.con, y+4);
+      doc.text(conc.substring(0,24), COL.con, y+4);
       doc.setDrawColor(230,232,237); doc.setLineWidth(0.2);
-      doc.line(ML,y+5.5,W-MR,y+5.5);
-      total+=s; y+=5.5;
+      doc.line(ML,y+rowHeight(),W-MR,y+rowHeight());
+      total+=s; y+=rowHeight();
     });
-    // Total row
-    doc.setFillColor(240,241,244); doc.rect(ML,y,ANC,5.5,'F');
-    hv('bold',7.5); doc.setTextColor(...NAVY);
-    doc.text('TOTAL', COL.mon-12, y+4);
-    doc.text(total.toLocaleString('es-DO',{minimumFractionDigits:2}), COL.mon+20, y+4, {align:'right'});
-    y+=5.5+8;
+    doc.setFillColor(240,241,244); doc.rect(ML,y,ANC,6,'F');
+    hv('bold',8.5); doc.setTextColor(...NAVY);
+    doc.text('TOTAL ('+rows.length+')', COL.mon-30, y+4);
+    doc.text(total.toLocaleString('es-DO',{minimumFractionDigits:2}), COL.mon+22, y+4, {align:'right'});
+    y+=6+9;
   }
 
   drawSec('ENTRADAS', ingresos, 'SUELDO');
   drawSec('CAMBIOS',  cambios.map(function(c){return c.despues;}), 'SUELDO');
   drawSec('SALIDAS',  salidas,  'MONTO');
 
-  // Firma
-  if(y>H-30){ doc.addPage(); y=18; }
-  y = Math.max(y, H-45);
+  // ── Firma — NUNCA sola en una página ──
+  // necesita ~26mm. Si no caben, nueva página, pero entonces escribimos un
+  // recordatorio del documento arriba para que no quede "sola y huérfana".
+  var firmaH = 26;
+  if(y + firmaH > H-12){
+    doc.addPage(); y=20;
+    hv('normal',8); doc.setTextColor(120,120,120);
+    doc.text(titulo + (periodoB?' — '+periodoB:'')+' (continuación)', ML, y);
+    y+=12;
+  }
   doc.setLineWidth(0.5); doc.setDrawColor(...NEGRO);
-  doc.line(ML,y,ML+65,y); y+=5;
-  hv('bold',9); doc.setTextColor(...NEGRO);
+  doc.line(ML,y,ML+70,y); y+=5;
+  hv('bold',9.5); doc.setTextColor(...NEGRO);
   doc.text(firmante, ML, y); y+=5;
-  hv('normal',8.5); doc.setTextColor(80,80,80);
+  hv('normal',9); doc.setTextColor(80,80,80);
   doc.text(cargoF, ML, y);
 
   // Footer
   var fy=H-8;
   doc.setDrawColor(...NAVY); doc.setLineWidth(0.4); doc.line(ML,fy-4,W-MR,fy-4);
-  hv('normal',6.5); doc.setTextColor(100,100,100);
+  hv('normal',7); doc.setTextColor(100,100,100);
   doc.text('PROPEEP · Dirección General de Proyectos Estratégicos y Especiales de la Presidencia · Dirección de RR.HH.', W/2, fy, {align:'center'});
 
   doc.save('Reporte_Novedades_'+(tipoNom||'Nomina')+'_'+(periodoB||new Date().toISOString().slice(0,7))+'.pdf');
   repSt('pdf-status','PDF de Novedades exportado correctamente.','ok');
 }
-
 
 function repGenerarResumenPDF(){
   const {jsPDF} = window.jspdf;
