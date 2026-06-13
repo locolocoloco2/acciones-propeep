@@ -197,9 +197,30 @@ function npGenerarPDF(){
     var hoy = new Date();
     doc.text('Fecha Impresión: '+hoy.toLocaleDateString('es-DO')+' '+hoy.toLocaleTimeString('es-DO'), W-MR, 8, {align:'right'});
     doc.text('Pág.: '+pageNum, W-MR, 13, {align:'right'});
-    // Coletilla
-    hv('normal',6.5); doc.setTextColor(60,60,60);
-    doc.text('Coletilla: '+coletilla, ML, 22);
+    // Coletilla (toda en negrita)
+    hv('bold',6.8); doc.setTextColor(40,40,40);
+    doc.text('Coletilla: '+coletilla, ML, 21.5);
+    // Llave presupuestaria debajo — cada etiqueta Cap:/SubCap: en negrita, su valor en regular
+    npDrawLlave(ML, 25);
+  }
+
+  // Dibuja la llave presupuestaria con etiquetas en negrita y valores en regular
+  function npDrawLlave(x0, yL){
+    var partes = [
+      ['Cap:','0201'],['SubCap:','06'],['UE:','0009'],['Prog:','19'],['Prod:','01'],
+      ['Proy:','00'],['Act:','0001'],['FueEsp:','0100'],['Org:','100'],['Reg:','98'],
+      ['Prov:','99'],['Mun:','9999'],['CCP:',cuenta],['Fun:','1.1.02'],['Obj:','00000'],
+    ];
+    var x = x0;
+    doc.setFontSize(5.8); doc.setTextColor(80,80,80);
+    partes.forEach(function(p){
+      doc.setFont('helvetica','bold');
+      doc.text(p[0], x, yL);
+      x += doc.getTextWidth(p[0]) + 0.4;
+      doc.setFont('helvetica','normal');
+      doc.text(p[1], x, yL);
+      x += doc.getTextWidth(p[1]) + 2.2;
+    });
   }
 
   function drawTableHeader(y){
@@ -225,7 +246,7 @@ function npGenerarPDF(){
   var ROW_H  = 8.0;    // alto uniforme: cómodo para 2 líneas, no apretado
 
   drawHeader();
-  var y = drawTableHeader(24);
+  var y = drawTableHeader(28);
 
   var T = {bruto:0,afp:0,isr:0,sfs:0,otros:0,desc:0,neto:0};
 
@@ -233,7 +254,7 @@ function npGenerarPDF(){
     if(y+ROW_H > H-14){
       doc.addPage();
       drawHeader();
-      y = drawTableHeader(24);
+      y = drawTableHeader(28);
     }
     if(i%2===0){ doc.setFillColor(244,245,247); doc.rect(ML,y,ANC,ROW_H,'F'); }
     hv('normal',6.8); doc.setTextColor(...NEGRO);
@@ -271,9 +292,10 @@ function npGenerarPDF(){
   });
 
   // Total General row
-  if(y+7 > H-14){ doc.addPage(); drawHeader(); y=24; }
-  doc.setFillColor(...NAVY); doc.rect(ML,y,ANC,7,'F');
-  hv('bold',7); doc.setTextColor(255,255,255);
+  if(y+7 > H-14){ doc.addPage(); drawHeader(); y=28; }
+  doc.setFillColor(235,238,243); doc.rect(ML,y,ANC,7,'F');
+  doc.setDrawColor(...NAVY); doc.setLineWidth(0.5); doc.rect(ML,y,ANC,7,'S');
+  hv('bold',7); doc.setTextColor(...NAVY);
   doc.text('TOTAL GENERAL  ('+emps.length+' servidores)', C.nom+1, y+4.8);
   doc.text(num(T.bruto), C.bruto+colWidths.bruto-1, y+4.8, {align:'right'});
   doc.text(num(T.afp),   C.afp+colWidths.afp-1,     y+4.8, {align:'right'});
@@ -315,8 +337,9 @@ function npGenerarPDF(){
   var cc1=38, cc2=95, cc3=120, cc4=50; // suma=303mm
   var ctblW = cc1+cc2+cc3+cc4;
   var ctblX = (W - ctblW)/2; // centrada
-  doc.setFillColor(...NAVY); doc.rect(ctblX,y,ctblW,7,'F');
-  hv('bold',8); doc.setTextColor(255,255,255);
+  doc.setFillColor(235,238,243); doc.rect(ctblX,y,ctblW,7,'F');
+  doc.setDrawColor(...NAVY); doc.setLineWidth(0.4); doc.rect(ctblX,y,ctblW,7,'S');
+  hv('bold',8); doc.setTextColor(...NAVY);
   doc.text('Código SIGEF', ctblX+2, y+4.8);
   doc.text('Concepto', ctblX+cc1+2, y+4.8);
   doc.text('Beneficiario', ctblX+cc1+cc2+2, y+4.8);
@@ -338,8 +361,10 @@ function npGenerarPDF(){
   // Tres totales finales en el mismo estilo: Brutos → Descuentos → Neto
   y+=2;
   function totalBar(label, monto){
-    doc.setFillColor(...NAVY); doc.rect(ctblX,y,ctblW,7,'F');
-    hv('bold',8.5); doc.setTextColor(255,255,255);
+    // Borde en vez de fondo azul (legible tras fotocopias)
+    doc.setDrawColor(...NAVY); doc.setLineWidth(0.5);
+    doc.rect(ctblX,y,ctblW,7,'S');
+    hv('bold',8.5); doc.setTextColor(...NEGRO);
     doc.text(label, ctblX+2, y+4.8);
     doc.text(num(monto), ctblX+ctblW-2, y+4.8, {align:'right'});
     y+=7+1.5;
@@ -385,18 +410,15 @@ function npGenerarPDF(){
     });
   });
 
-  // Footer con numeración + llave presupuestaria en todas las páginas
+  // Footer con numeración en todas las páginas
   var totalP = doc.internal.getNumberOfPages();
   for(var p=1;p<=totalP;p++){
     doc.setPage(p);
-    var fy=H-7;
+    var fy=H-6;
     doc.setDrawColor(...NAVY); doc.setLineWidth(0.3); doc.line(ML,fy-3,W-MR,fy-3);
     hv('normal',6.3); doc.setTextColor(110,110,110);
     doc.text('Coletilla: '+coletilla, ML, fy);
     doc.text('Pág. '+p+' / '+totalP, W-MR, fy, {align:'right'});
-    // Llave presupuestaria en línea continua debajo de la coletilla
-    hv('normal',5.8); doc.setTextColor(130,130,130);
-    doc.text(llavePresup, ML, fy+3.2);
   }
 
   // Re-estampar la certificación con el número TOTAL real de hojas
