@@ -365,7 +365,7 @@ function npGenerarPDF(){
 
   // ══ BLOQUE FINAL (totales + firmas + certifico) — SIEMPRE JUNTO ══
   // Alto real del bloque: 3 totales(26) + respiro(16) + firmas(16) + respiro(16) + certifico(20) ≈ 94mm
-  var BLOQUE_H = 94;
+  var BLOQUE_H = 106;
   if(y + BLOQUE_H > H-14){
     doc.addPage();
     drawHeader();
@@ -387,7 +387,7 @@ function npGenerarPDF(){
   totalBar('TOTAL SUELDOS BRUTOS', T.bruto);
   totalBar('TOTAL DESCUENTOS EMPLEADOS', totalDescEmp);
   totalBar('TOTAL SUELDO NETO', netoConCredito);
-  y+=18;
+  y+=30;
 
   // ── 4 FIRMAS configurables ──
   var firmantes = (window.PROPEEP_CONFIG && window.PROPEEP_CONFIG.firmantes) || [
@@ -415,12 +415,12 @@ function npGenerarPDF(){
   });
   y = ny + 20;
 
-  // ── Certificación (letra regular, alineada a la izquierda) ──
+  // ── Certificación (letra regular, alineada con los márgenes de la tabla de conceptos) ──
   hv('normal',7); doc.setTextColor(...NEGRO);
   var certText = 'CERTIFICO QUE ESTA NOMINA DE PAGO, CONSTA DE '+emps.length+' PERSONAS, ESTA CORRECTA Y COMPLETA Y QUE LAS PERSONAS ENUMERADAS EN LA MISMA SON LAS QUE A ESTA FECHA FIGURAN EN LOS RECORDS DE PERSONAL QUE MANTIENE LA SECCION DE SERVICIOS PERSONALES DE LA CONTRALORIA GENERAL DE LA REPUBLICA.';
-  var certLines = doc.splitTextToSize(certText, ANC);
+  var certLines = doc.splitTextToSize(certText, ctblW);
   certLines.forEach(function(ln, li){
-    doc.text(ln, ML, y + li*4.5);
+    doc.text(ln, ctblX, y + li*4.5);
   });
 
   // Footer con numeración en todas las páginas
