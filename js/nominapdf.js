@@ -132,6 +132,16 @@ function npGenerarPDF(){
     Compensacion_Seguridad:{estatus:'Comp. Seg.',coletilla:'COMPENSACIÓN SEGURIDAD MILITAR'},
   };
   var lbl   = tipoLabels[tipoNom] || {estatus:tipoNom, coletilla:'NÓMINA DE SUELDOS'};
+
+  // Llave presupuestaria — solo cambia la cuenta (CCP) según el tipo
+  var cuentas = {
+    Fijo:                  '2.1.1.1.01',
+    Temporal:              '2.1.1.2.08',
+    Caracter_Eventual:     '2.1.1.2.09',
+    Compensacion_Seguridad:'2.1.2.2.05',
+  };
+  var cuenta = cuentas[tipoNom] || '2.1.1.1.01';
+  var llavePresup = 'Cap:0201 SubCap:06 UE:0009 Prog:19 Prod:01 Proy:00 Act:0001 FueEsp:0100 Org:100 Reg:98 Prov:99 Mun:9999 CCP:'+cuenta+' Fun:1.1.02 Obj:00000';
   var estatus  = lbl.estatus;
   // Período en español para coletilla: "MAYO 2026" etc
   var meses = ['','ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
@@ -325,13 +335,27 @@ function npGenerarPDF(){
     doc.line(ctblX, y+6, ctblX+ctblW, y+6);
     y+=6;
   });
-  // Total de la recapitulación (Total Descuentos + aportes informativos)
+  // Tres totales finales en el mismo estilo: Brutos → Descuentos → Neto
   y+=2;
-  doc.setFillColor(...NAVY); doc.rect(ctblX,y,ctblW,7,'F');
-  hv('bold',8.5); doc.setTextColor(255,255,255);
-  doc.text('TOTAL NÓMINA (Sueldos Brutos)', ctblX+2, y+4.8);
-  doc.text(num(T.bruto), ctblX+ctblW-2, y+4.8, {align:'right'});
-  y+=7+18;
+  function totalBar(label, monto){
+    doc.setFillColor(...NAVY); doc.rect(ctblX,y,ctblW,7,'F');
+    hv('bold',8.5); doc.setTextColor(255,255,255);
+    doc.text(label, ctblX+2, y+4.8);
+    doc.text(num(monto), ctblX+ctblW-2, y+4.8, {align:'right'});
+    y+=7+1.5;
+  }
+  totalBar('TOTAL SUELDOS BRUTOS', T.bruto);
+  totalBar('TOTAL DESCUENTOS', T.desc);
+  totalBar('TOTAL SUELDO NETO', T.neto);
+  y+=6;
+
+  // Línea de certificación centrada — el # de hojas se estampa al final
+  hv('bold',9); doc.setTextColor(...NEGRO);
+  var certPage = doc.internal.getNumberOfPages();
+  var certY = y;
+  // marcador temporal; se reemplaza tras conocer el total real de páginas
+  doc.text('CERTIFICO QUE ESTA NÓMINA CUENTA CON UN TOTAL DE '+emps.length+' EMPLEADOS Y __ HOJAS.', W/2, y, {align:'center'});
+  y+=16;
 
   // ── 4 FIRMAS configurables ──
   var firmantes = (window.PROPEEP_CONFIG && window.PROPEEP_CONFIG.firmantes) || [
@@ -361,16 +385,27 @@ function npGenerarPDF(){
     });
   });
 
-  // Footer con numeración en todas las páginas
+  // Footer con numeración + llave presupuestaria en todas las páginas
   var totalP = doc.internal.getNumberOfPages();
   for(var p=1;p<=totalP;p++){
     doc.setPage(p);
-    var fy=H-5;
+    var fy=H-7;
     doc.setDrawColor(...NAVY); doc.setLineWidth(0.3); doc.line(ML,fy-3,W-MR,fy-3);
-    hv('normal',6.5); doc.setTextColor(110,110,110);
+    hv('normal',6.3); doc.setTextColor(110,110,110);
     doc.text('Coletilla: '+coletilla, ML, fy);
     doc.text('Pág. '+p+' / '+totalP, W-MR, fy, {align:'right'});
+    // Llave presupuestaria en línea continua debajo de la coletilla
+    hv('normal',5.8); doc.setTextColor(130,130,130);
+    doc.text(llavePresup, ML, fy+3.2);
   }
+
+  // Re-estampar la certificación con el número TOTAL real de hojas
+  doc.setPage(certPage);
+  // tapar el texto anterior con un rectángulo blanco
+  doc.setFillColor(255,255,255);
+  doc.rect(ML, certY-5, ANC, 7, 'F');
+  hv('bold',9); doc.setTextColor(...NEGRO);
+  doc.text('CERTIFICO QUE ESTA NÓMINA CUENTA CON UN TOTAL DE '+emps.length+' EMPLEADOS Y '+totalP+' HOJAS.', W/2, certY, {align:'center'});
 
   doc.save('Reporte_Nomina_'+tipoNom+'_'+periodoStr+'.pdf');
   npSt('pdf-status','Reporte de Nómina exportado correctamente.','ok');
