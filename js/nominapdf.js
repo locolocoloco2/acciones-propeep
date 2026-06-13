@@ -328,9 +328,9 @@ function npGenerarPDF(){
     ['03002','430149454','TSS','SEGURO PERCAPITA', sumDepAdic],
     ['03004','430149462','INSTITUTO DE AUXILIOS Y VIVIENDAS','SEG. VIDA, CES. E INVALIDEZ', sumInabi],
     ['590-02','499999984','COLECTOR DE RENTAS INTERNAS','CREDITO FISCAL PARA ISR', creditoF],
-    ['02001','499999984','COLECTOR DE IMPUESTOS INTERNOS','APORTE AFP EMPLEADOR', sumSsEmpl],
-    ['02001','499999984','COLECTOR DE IMPUESTOS INTERNOS','APORTE SFS EMPLEADOR', sumSfsEmpl],
-    ['02001','499999984','COLECTOR DE IMPUESTOS INTERNOS','APORTE RIESGO LABORAL', sumRiesgo],
+    ['02002','430149454','TESORERIA DE LA SEGURIDAD SOCIAL','APORTE AFP EMPLEADOR', sumSsEmpl],
+    ['03007','430149454','TESORERIA DE LA SEGURIDAD SOCIAL','APORTE SFS EMPLEADOR', sumSfsEmpl],
+    ['02002','430149454','TESORERIA DE LA SEGURIDAD SOCIAL','APORTE RIESGO LABORAL', sumRiesgo],
   ];
 
   var k1=22, k2=28, k3=110, k4=115, k5=38;
@@ -364,12 +364,12 @@ function npGenerarPDF(){
   y+=4;
 
   // ══ BLOQUE FINAL (totales + firmas + certifico) — SIEMPRE JUNTO ══
-  // Alto estimado del bloque: 3 totales(25) + respiro(22) + firmas(18) + respiro(22) + certifico(25) ≈ 112mm
-  var BLOQUE_H = 115;
+  // Alto real del bloque: 3 totales(26) + respiro(16) + firmas(16) + respiro(16) + certifico(20) ≈ 94mm
+  var BLOQUE_H = 94;
   if(y + BLOQUE_H > H-14){
     doc.addPage();
     drawHeader();
-    y = 34;
+    y = 30;
   }
 
   // 3 totales con borde
@@ -387,7 +387,7 @@ function npGenerarPDF(){
   totalBar('TOTAL SUELDOS BRUTOS', T.bruto);
   totalBar('TOTAL DESCUENTOS EMPLEADOS', totalDescEmp);
   totalBar('TOTAL SUELDO NETO', netoConCredito);
-  y+=24;
+  y+=18;
 
   // ── 4 FIRMAS configurables ──
   var firmantes = (window.PROPEEP_CONFIG && window.PROPEEP_CONFIG.firmantes) || [
@@ -413,7 +413,7 @@ function npGenerarPDF(){
       doc.text(ln, fx+fw/2, ny+4 + li*3, {align:'center'});
     });
   });
-  y = ny + 26;
+  y = ny + 20;
 
   // ── Certificación (letra regular, centrada) ──
   hv('normal',8); doc.setTextColor(...NEGRO);
