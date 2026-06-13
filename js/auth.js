@@ -123,6 +123,7 @@ function switchTab(t){
   });
   if(t==='hist') loadHist();
   if(t==='certhist') loadCertHist();
+  if(t==='novedades' && typeof novInitFileInputs==='function') novInitFileInputs();
   if(t==='resumen') renderResumen();
 }
 

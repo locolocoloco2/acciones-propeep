@@ -69,54 +69,64 @@ function novOnDrop(e, lado){
 }
 
 function novLoadFiles(files, lado){
-  if(!files || !files.length) return;
-  // Convert FileList to plain array
+  if(!files || !files.length){ console.warn('novLoadFiles: no files'); return; }
   var arr = [];
   for(var i=0; i<files.length; i++) arr.push(files[i]);
+  console.log('novLoadFiles: lado='+lado+', files='+arr.length);
 
-  // Show loading state immediately
-  var zona   = document.getElementById('nov-zona-'+lado);
-  var label  = document.getElementById('nov-label-'+lado);
-  var lista  = document.getElementById('nov-lista-'+lado);
+  var zona  = document.getElementById('nov-zona-'+lado);
+  var label = document.getElementById('nov-label-'+lado);
+  var lista = document.getElementById('nov-lista-'+lado);
+
+  if(!zona || !label || !lista){
+    console.error('novLoadFiles: DOM elements not found for lado='+lado);
+    return;
+  }
+
   label.textContent = 'Cargando '+arr.length+' archivo(s)...';
   zona.style.borderColor = '#92400E';
   lista.innerHTML = '';
 
-  // Parse files sequentially using recursive index approach (no for...of)
   var merged = {};
+
   function parseNext(idx){
     if(idx >= arr.length){
-      // All done
-      if(lado === 'a'){
-        novDataA = merged;
-        novFilesA = arr.length;
-      } else {
-        novDataB = merged;
-        novFilesB = arr.length;
-      }
+      if(lado === 'a'){ novDataA = merged; novFilesA = arr.length; }
+      else             { novDataB = merged; novFilesB = arr.length; }
       var n = Object.keys(merged).length;
-      label.textContent = arr.length+' archivo(s) · '+n+' empleados cargados';
+      console.log('novLoadFiles DONE: lado='+lado+', empleados='+n);
+      label.textContent = arr.length+' archivo(s) — '+n+' empleados cargados';
       zona.style.borderColor = 'var(--azul)';
       zona.style.background  = 'var(--azul-claro)';
       lista.innerHTML = arr.map(function(f){
-        return '<div style="color:var(--ok)">&#x2713; '+f.name+'</div>';
+        return '<div style="color:var(--ok);font-size:11px">&#x2713; '+f.name+'</div>';
       }).join('');
-      // Enable compare button if both sides loaded
       var btn = document.getElementById('nov-btn-comparar');
       if(btn && Object.keys(novDataA).length>0 && Object.keys(novDataB).length>0){
         btn.disabled = false;
-        btn.style.opacity = '1';
+        btn.classList.remove('btn-outline');
+        btn.classList.add('btn-primary');
       }
       return;
     }
+    label.textContent = 'Leyendo archivo '+(idx+1)+' de '+arr.length+'...';
     novParseFile(arr[idx]).then(function(data){
+      var n = Object.keys(data).length;
+      console.log('Parsed '+arr[idx].name+': '+n+' rows');
       Object.assign(merged, data);
-      label.textContent = 'Procesando '+(idx+1)+'/'+arr.length+'...';
+      parseNext(idx+1);
+    }).catch(function(err){
+      console.error('Error parsing '+arr[idx].name, err);
       parseNext(idx+1);
     });
   }
   parseNext(0);
 }
+
+// ── File input handlers — called directly from HTML onchange ──
+function novHandleA(input){ if(input.files && input.files.length) novLoadFiles(input.files,'a'); }
+function novHandleB(input){ if(input.files && input.files.length) novLoadFiles(input.files,'b'); }
+function novInitFileInputs(){ /* noop — handled via onchange */ }
 
 // ── Comparar ──
 function novComparar(){
