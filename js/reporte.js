@@ -316,7 +316,14 @@ async function repGuardarNomina(){
 
 // ── Generar PDF ──
 function repGenerarPDF(){
-  if(!repFilas.length){ repSt('pdf-status','Agrega al menos una novedad antes de exportar.','err'); return; }
+  // Use novResultado if repFilas is empty (unified module)
+  if(!repFilas.length && window.novResultado){
+    var r = window.novResultado;
+    r.ingresos.forEach(function(e){ repFilas.push({cedula:e.cedula,nombre:e.nombre,cargo:e.cargo,sueldo:e.sueldo_bruto,tipo:'ENTRADA',concepto:'INGRESO',fecha:''}); });
+    r.salidas.forEach(function(e){ repFilas.push({cedula:e.cedula,nombre:e.nombre,cargo:e.cargo,sueldo:e.sueldo_bruto,tipo:'SALIDA',concepto:'EXCLUSION DE NOMINA',fecha:''}); });
+    r.cambios.forEach(function(c){ repFilas.push({cedula:c.despues.cedula,nombre:c.despues.nombre,cargo:c.despues.cargo,sueldo:c.despues.sueldo_bruto,tipo:'CAMBIO',concepto:'RECLASIFICACION',fecha:''}); });
+  }
+  if(!repFilas.length){ repSt('pdf-status','Compara los períodos primero.','err'); return; }
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
   const W=216, H=279, ML=14, MR=14, ANC=W-ML-MR;
@@ -493,8 +500,10 @@ function repGenerarResumenPDF(){
   const nomAnt    = sumA(function(e){return e.sueldo_bruto||e.sueldo||0;});
 
   // Período nuevo (nómina cargada en este módulo)
-  const emps      = Object.values(repNomina);
-  if(!emps.length){ repSt('pdf-status','Carga la nómina del período primero.','err'); return; }
+  // Use repNomina (reporte module) or novDataB (novedades module) as fallback
+  var _nomSrc = (Object.keys(repNomina||{}).length > 0) ? repNomina : (window._novRepNomina||{});
+  const emps = Object.values(_nomSrc);
+  if(!emps.length){ repSt('pdf-status','Compara los períodos primero antes de exportar el PDF.','err'); return; }
   function sumN(fn){ return emps.reduce(function(s,e){return s+fn(e);},0); }
 
   const sueldoBruto = sumN(function(e){return e.sueldo||0;});

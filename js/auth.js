@@ -74,8 +74,7 @@ function applyRoleUI(){
   if(tabISR) tabISR.style.display = _isV ? '' : 'none';
   const tabRegalia = document.getElementById('tab-regalia');
   if(tabRegalia) tabRegalia.style.display = _isV ? '' : 'none';
-  const tabNov = document.getElementById('tab-novedades');
-  if(tabNov) tabNov.style.display = _isV ? '' : 'none';
+
   const tabRep = document.getElementById('tab-reporte');
   if(tabRep) tabRep.style.display = _isV ? '' : 'none';
   // Ocultar secciones del menú sin módulos visibles
@@ -115,7 +114,7 @@ function closeSidebar(){
 }
 function switchTab(t){
   closeSidebar();
-  ['form','lote','hist','cert','certhist','isr','novedades','reporte','regalia','resumen'].forEach(function(id){
+  ['form','lote','hist','cert','certhist','isr','reporte','regalia','resumen'].forEach(function(id){
     const tab = document.getElementById('tab-'+id);
     const panel = document.getElementById('panel-'+id);
     if(tab) tab.classList.toggle('active', id===t);
@@ -123,7 +122,6 @@ function switchTab(t){
   });
   if(t==='hist') loadHist();
   if(t==='certhist') loadCertHist();
-  if(t==='novedades' && typeof novInitFileInputs==='function') novInitFileInputs();
   if(t==='resumen') renderResumen();
 }
 

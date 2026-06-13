@@ -52,6 +52,11 @@ function novParseFile(file){
           };
           result[cedula] = obj;
         });
+        // Auto-detect period from first data row column 1
+        var periodoDetectado = '';
+        var firstRow = allRows[hi+1];
+        if(firstRow && firstRow[0]) periodoDetectado = String(firstRow[0]).trim();
+        result.__periodo__ = periodoDetectado;
         resolve(result);
       }catch(err){ console.warn('Error leyendo', file.name, err); resolve({}); }
     };
@@ -93,9 +98,13 @@ function novLoadFiles(files, lado){
     if(idx >= arr.length){
       if(lado === 'a'){ novDataA = merged; novFilesA = arr.length; }
       else             { novDataB = merged; novFilesB = arr.length; }
+      var periodo = merged.__periodo__ || '';
+      delete merged.__periodo__; // clean up sentinel
+      if(lado==='a') window._novPeriodoA = periodo;
+      else           window._novPeriodoB = periodo;
       var n = Object.keys(merged).length;
-      console.log('novLoadFiles DONE: lado='+lado+', empleados='+n);
-      label.textContent = arr.length+' archivo(s) — '+n+' empleados cargados';
+      console.log('novLoadFiles DONE: lado='+lado+', empleados='+n+', periodo='+periodo);
+      label.textContent = (periodo ? periodo+' · ' : '')+arr.length+' archivo(s) — '+n+' empleados';
       zona.style.borderColor = 'var(--azul)';
       zona.style.background  = 'var(--azul-claro)';
       lista.innerHTML = arr.map(function(f){
@@ -153,6 +162,7 @@ function novComparar(){
   });
 
   novResultado = {ingresos, salidas, cambios, iguales};
+  window.novResultado = novResultado; // accessible to reporte.js
 
   // Tarjetas de resumen
   function sumar(arr){ return arr.reduce(function(s,e){ return s + (e.sueldo_bruto||0); }, 0); }
@@ -179,6 +189,8 @@ function novComparar(){
 
   document.getElementById('nov-results').style.display = 'block';
   novTab('ingresos');
+  // Also feed novDataB into repNomina so PDF resumen works
+  if(typeof repNomina !== 'undefined') window._novRepNomina = novDataB;
 }
 
 function novCard(titulo, n, monto, bgColor, fgColor, esDiff){
@@ -253,14 +265,14 @@ function novRenderResumen(ingresos, salidas, cambios, iguales){
     function f(n){ return n.toLocaleString('es-DO',{minimumFractionDigits:2}); }
     return `<tr style="color:${color}">
       <td><strong>${label} (${arr.length})</strong></td>
-      <td style="text-align:right">${f(s(function(e){return e.sueldo_bruto;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.isr;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.inabi;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.ss_emp+e.sfs_emp;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.ss_empl+e.sfs_empl;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.dep_adic;}))}</td>
-      <td style="text-align:right">${f(s(function(e){return e.riesgo;}))}</td>
-      <td style="text-align:right"><strong>${f(s(function(e){return e.sueldo_neto;}))}</strong></td>
+      <td style="text-align:right;color:#fff">${f(s(function(e){return e.sueldo_bruto;}))}</td>
+      <td style="text-align:right;color:#fff">${f(s(function(e){return e.isr;}))}</td>
+      <td style="text-align:right;color:#fff">${f(s(function(e){return e.inabi;}))}</td>
+      <td style="text-align:right;color:#fff">${f(s(function(e){return e.ss_emp+e.sfs_emp;}))}</td>
+      <td style="text-align:right;color:#fff">${f(s(function(e){return e.ss_empl+e.sfs_empl;}))}</td>
+      <td style="text-align:right;color:#fff">${f(s(function(e){return e.dep_adic;}))}</td>
+      <td style="text-align:right;color:#fff">${f(s(function(e){return e.riesgo;}))}</td>
+      <td style="text-align:right;color:#fff"><strong>${f(s(function(e){return e.sueldo_neto;}))}</strong></td>
     </tr>`;
   }
 
@@ -270,8 +282,8 @@ function novRenderResumen(ingresos, salidas, cambios, iguales){
   function totalRow(arr, label){
     function s(fn){ return arr.reduce(function(t,e){ return t+fn(e); },0); }
     function f(n){ return n.toLocaleString('es-DO',{minimumFractionDigits:2}); }
-    return `<tr style="background:var(--azul);color:#fff;font-weight:700">
-      <td>${label} (${arr.length})</td>
+    return `<tr style="background:var(--azul);color:#fff;font-weight:700;font-size:11.5px">
+      <td style="color:#fff;padding:10px 13px">${label} (${arr.length})</td>
       <td style="text-align:right">${f(s(function(e){return e.sueldo_bruto;}))}</td>
       <td style="text-align:right">${f(s(function(e){return e.isr;}))}</td>
       <td style="text-align:right">${f(s(function(e){return e.inabi;}))}</td>
