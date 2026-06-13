@@ -62,39 +62,60 @@ function novParseFile(file){
 // ── Drag & Drop ──
 function novOnDrop(e, lado){
   e.preventDefault();
+  e.stopPropagation();
   document.getElementById('nov-zona-'+lado).classList.remove('over');
-  novLoadFiles(e.dataTransfer.files, lado);
+  var files = e.dataTransfer ? e.dataTransfer.files : null;
+  if(files && files.length) novLoadFiles(files, lado);
 }
 
-async function novLoadFiles(files, lado){
+function novLoadFiles(files, lado){
   if(!files || !files.length) return;
-  const arr = Array.from(files);
-  let merged = {};
-  for(const f of arr){
-    const data = await novParseFile(f);
-    Object.assign(merged, data);
+  // Convert FileList to plain array
+  var arr = [];
+  for(var i=0; i<files.length; i++) arr.push(files[i]);
+
+  // Show loading state immediately
+  var zona   = document.getElementById('nov-zona-'+lado);
+  var label  = document.getElementById('nov-label-'+lado);
+  var lista  = document.getElementById('nov-lista-'+lado);
+  label.textContent = 'Cargando '+arr.length+' archivo(s)...';
+  zona.style.borderColor = '#92400E';
+  lista.innerHTML = '';
+
+  // Parse files sequentially using recursive index approach (no for...of)
+  var merged = {};
+  function parseNext(idx){
+    if(idx >= arr.length){
+      // All done
+      if(lado === 'a'){
+        novDataA = merged;
+        novFilesA = arr.length;
+      } else {
+        novDataB = merged;
+        novFilesB = arr.length;
+      }
+      var n = Object.keys(merged).length;
+      label.textContent = arr.length+' archivo(s) · '+n+' empleados cargados';
+      zona.style.borderColor = 'var(--azul)';
+      zona.style.background  = 'var(--azul-claro)';
+      lista.innerHTML = arr.map(function(f){
+        return '<div style="color:var(--ok)">&#x2713; '+f.name+'</div>';
+      }).join('');
+      // Enable compare button if both sides loaded
+      var btn = document.getElementById('nov-btn-comparar');
+      if(btn && Object.keys(novDataA).length>0 && Object.keys(novDataB).length>0){
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+      return;
+    }
+    novParseFile(arr[idx]).then(function(data){
+      Object.assign(merged, data);
+      label.textContent = 'Procesando '+(idx+1)+'/'+arr.length+'...';
+      parseNext(idx+1);
+    });
   }
-  if(lado === 'a'){
-    novDataA = merged;
-    novFilesA = arr.length;
-    document.getElementById('nov-label-a').textContent = arr.length+' archivo(s) cargado(s) — '+Object.keys(merged).length+' empleados';
-    document.getElementById('nov-zona-a').style.borderColor = 'var(--azul)';
-    document.getElementById('nov-lista-a').innerHTML = arr.map(function(f){
-      return '<div>&#x2713; '+f.name+'</div>';
-    }).join('');
-  } else {
-    novDataB = merged;
-    novFilesB = arr.length;
-    document.getElementById('nov-label-b').textContent = arr.length+' archivo(s) cargado(s) — '+Object.keys(merged).length+' empleados';
-    document.getElementById('nov-zona-b').style.borderColor = 'var(--azul)';
-    document.getElementById('nov-lista-b').innerHTML = arr.map(function(f){
-      return '<div>&#x2713; '+f.name+'</div>';
-    }).join('');
-  }
-  const btn = document.getElementById('nov-btn-comparar');
-  if(Object.keys(novDataA).length > 0 && Object.keys(novDataB).length > 0){
-    btn.disabled = false;
-  }
+  parseNext(0);
 }
 
 // ── Comparar ──
@@ -302,6 +323,7 @@ function novReset(){
   ['a','b'].forEach(function(l){
     document.getElementById('nov-label-'+l).textContent='Arrastra 1 o más archivos Excel';
     document.getElementById('nov-zona-'+l).style.borderColor='';
+    document.getElementById('nov-zona-'+l).style.background='';
     document.getElementById('nov-lista-'+l).innerHTML='';
     document.getElementById('nov-fi-'+l).value='';
   });
