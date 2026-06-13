@@ -4,11 +4,17 @@
 let SESSION = null;
 
 function fmtCedula(inp){
-  let v = inp.value.replace(/[^0-9]/g,'');
-  if(v.length>3 && v.length<=10) v = v.slice(0,3)+'-'+v.slice(3);
-  if(v.length>10) v = v.slice(0,11)+'-'+v.slice(11);
-  if(v.replace(/-/g,'').length>11) v = v.slice(0,13);
-  inp.value = v;
+  // Tomar solo los dígitos y limitar a 11
+  var d = inp.value.replace(/[^0-9]/g,'').slice(0,11);
+  var out = d;
+  if(d.length > 10){
+    // 000-0000000-0
+    out = d.slice(0,3) + '-' + d.slice(3,10) + '-' + d.slice(10);
+  } else if(d.length > 3){
+    // 000-0000000
+    out = d.slice(0,3) + '-' + d.slice(3);
+  }
+  inp.value = out;
 }
 
 function doLogin(){

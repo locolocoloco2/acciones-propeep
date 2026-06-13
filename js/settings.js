@@ -101,6 +101,12 @@ function renderConfigISR(){
 
 // ── Guardar ──
 function guardarConfig(){
+  // Pedir validación de cédula (con guiones) antes de guardar
+  mostrarValidacionConfig();
+}
+
+// Recolecta los valores actuales del formulario y los guarda (tras validar cédula)
+function ejecutarGuardadoConfig(){
   var fm = window.PROPEEP_CONFIG.firmantes.map(function(f, i){
     return {
       nombre: (document.getElementById('cfg-fm-nombre-'+i)||{value:f.nombre}).value.trim(),
@@ -126,6 +132,51 @@ function guardarConfig(){
              : 'Guardado local, pero falló el guardado en base de datos. Verifica la conexión.',
           ok ? 'ok' : 'err');
   });
+}
+
+// ── Validación por cédula antes de guardar ──
+function mostrarValidacionConfig(){
+  var modal = document.getElementById('config-valida-modal');
+  if(modal){
+    var inp = document.getElementById('config-valida-cedula');
+    if(inp) inp.value = '';
+    var st = document.getElementById('config-valida-status');
+    if(st) st.style.display = 'none';
+    modal.style.display = 'flex';
+    if(inp) inp.focus();
+  }
+}
+
+function cerrarValidacionConfig(){
+  var modal = document.getElementById('config-valida-modal');
+  if(modal) modal.style.display = 'none';
+}
+
+function confirmarValidacionConfig(){
+  var inp = document.getElementById('config-valida-cedula');
+  var ingresada = (inp ? inp.value : '').trim();
+  // Cédula del usuario en sesión, formateada con guiones
+  var cedulaSesion = (typeof SESSION !== 'undefined' && SESSION && SESSION.cedula) ? SESSION.cedula : '';
+  var cedulaConGuiones = (typeof fmtCed === 'function') ? fmtCed(cedulaSesion) : cedulaSesion;
+  // Normalizar ambas (solo dígitos) para comparar, pero exigir que el usuario haya escrito guiones
+  var soloDigitosIngresada = ingresada.replace(/[^0-9]/g,'');
+  var soloDigitosSesion = String(cedulaSesion).replace(/[^0-9]/g,'');
+  var tieneGuiones = ingresada.indexOf('-') >= 0;
+
+  var st = document.getElementById('config-valida-status');
+  function vSt(msg, tipo){ if(st){ st.textContent=msg; st.className='status '+tipo; st.style.display='block'; } }
+
+  if(!tieneGuiones){
+    vSt('Debes escribir la cédula con guiones (000-0000000-0).', 'err');
+    return;
+  }
+  if(soloDigitosIngresada !== soloDigitosSesion || soloDigitosSesion===''){
+    vSt('La cédula no coincide con la del usuario autorizado.', 'err');
+    return;
+  }
+  // Validación correcta → cerrar modal y guardar
+  cerrarValidacionConfig();
+  ejecutarGuardadoConfig();
 }
 
 async function guardarConfigBD(cfg){

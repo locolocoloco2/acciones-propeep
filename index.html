@@ -76,6 +76,28 @@
   </div>
 </div>
 
+<!-- MODAL DE VALIDACIÓN POR CÉDULA (para guardar configuración) -->
+<div id="config-valida-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(12,28,54,.6);align-items:center;justify-content:center;padding:20px">
+  <div style="max-width:420px;width:100%;background:var(--papel);border-radius:var(--radio);box-shadow:0 20px 60px rgba(0,0,0,.4);border-top:3px solid var(--rojo)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--borde)">
+      <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:16px;color:var(--azul);font-weight:600;margin:0">Confirmar Identidad</h2>
+      <button onclick="cerrarValidacionConfig()" style="background:none;border:none;font-size:22px;color:var(--texto2);cursor:pointer;line-height:1">&times;</button>
+    </div>
+    <div style="padding:22px 24px">
+      <p style="margin:0 0 14px;font-size:13px;color:var(--texto2)">Para guardar los cambios en la configuración, confirma tu identidad escribiendo tu cédula <strong>con guiones</strong>.</p>
+      <label>Cédula (000-0000000-0)</label>
+      <input type="text" id="config-valida-cedula" maxlength="13" placeholder="000-0000000-0"
+             oninput="fmtCedula(this)"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();confirmarValidacionConfig();}">
+      <div id="config-valida-status" class="status" style="display:none;margin-top:10px"></div>
+      <div class="actions-bar" style="margin-top:18px">
+        <button class="btn btn-outline" onclick="cerrarValidacionConfig()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarValidacionConfig()">Confirmar y Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="app-body">
 <nav class="sidebar tabs" id="sidebar" aria-label="Módulos del sistema">
   <div class="nav-section">
