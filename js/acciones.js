@@ -156,9 +156,34 @@ async function loadHist(){
   renderHist();
 }
 
+// Normaliza un valor de texto al tipo de empleado canónico
+function normalizarTipoEmpleado(v){
+  var s = String(v||'').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[\s_-]+/g,' ');
+  if(!s) return '';
+  if(s.indexOf('fijo')>=0) return 'Fijo';
+  if(s.indexOf('temporal')>=0) return 'Temporal';
+  if(s.indexOf('caracter')>=0 || s.indexOf('eventual')>=0) return 'Caracter_Eventual';
+  if(s.indexOf('compensacion')>=0 || s.indexOf('seguridad')>=0) return 'Compensacion_Seguridad';
+  return '';
+}
+
+// Etiqueta corta legible para el tipo de empleado
+function tipoEmpLabel(t){
+  var map = {
+    'Fijo':'Fijo',
+    'Temporal':'Temporal',
+    'Caracter_Eventual':'Caráct. Event.',
+    'Compensacion_Seguridad':'Comp. Seg.'
+  };
+  return map[t] || '—';
+}
+
 function renderHist(){
   const search = (document.getElementById('hist-search').value||'').toLowerCase();
   const estFilt = document.getElementById('hist-est').value;
+  const tipoFilt = document.getElementById('hist-tipo') ? document.getElementById('hist-tipo').value : '';
   const rol = SESSION ? SESSION.rol : '';
 
   let base = histData;
@@ -171,6 +196,7 @@ function renderHist(){
     const cedula = ((r.cedula_empleado||'')+' '+fmtCed(r.cedula_empleado)).toLowerCase();
     const est = r.estado||'Creada';
     if(estFilt && est !== estFilt) return false;
+    if(tipoFilt && (r.tipo_empleado||'') !== tipoFilt) return false;
     if(search && nombre.indexOf(search)<0 && cedula.indexOf(search)<0) return false;
     return true;
   });
@@ -187,7 +213,7 @@ function renderHist(){
   const isAdmin = rol === 'admin';
   // Check-all only for admins (bulk actions)
   const checkAllTh = isAdmin ? '<th style="width:32px"><input type="checkbox" id="chk-all" onchange="toggleCheckAll(this)" title="Seleccionar todo" style="accent-color:var(--azul);width:15px;height:15px"></th>' : '';
-  let html = '<div class="table-wrap"><table><thead><tr>'+checkAllTh+'<th>Fecha</th><th>Generado por</th><th>Empleado</th><th>Cédula</th><th>Cargo</th><th>Naturaleza</th><th>Estado</th>'+(isAdmin?'<th>Cambiar</th>':'')+'<th>Descargar</th></tr></thead><tbody>';
+  let html = '<div class="table-wrap"><table><thead><tr>'+checkAllTh+'<th>Fecha</th><th>Generado por</th><th>Empleado</th><th>Cédula</th><th>Cargo</th><th>Tipo</th><th>Naturaleza</th><th>Estado</th>'+(isAdmin?'<th>Cambiar</th>':'')+'<th>Descargar</th></tr></thead><tbody>';
   filtered.forEach(function(r){
     const est = r.estado||'Creada';
     const estClass = est.replace(/\s/g,'');
@@ -201,6 +227,7 @@ function renderHist(){
     html += '<td><strong>'+(r.nombre_empleado||'—')+'</strong></td>';
     html += '<td>'+(fmtCed(r.cedula_empleado)||'—')+'</td>';
     html += '<td>'+(r.cargo||'—')+'</td>';
+    html += '<td>'+tipoEmpLabel(r.tipo_empleado||'')+'</td>';
     html += '<td>'+(r.naturaleza||'—')+'</td>';
     html += '<td><span class="est-badge est-'+estClass+'" id="badge-'+r.id+'">'+est+'</span></td>';
     if(isAdmin){
@@ -314,6 +341,7 @@ async function registrarAccion(d){
     unidad: d.unidad||'',
     cedula: d.cedula||'',
     tiempo_adm: d.tiempo_adm||'',
+    tipo_empleado: d.tipo_empleado||'',
     naturaleza: d.naturaleza||'',
     motivacion: d.motivacion||'',
     directora: d.directora||'Directora de Recursos Humanos'
@@ -328,6 +356,7 @@ async function registrarAccion(d){
     naturaleza: natLabel(d.naturaleza),
     motivacion: (d.motivacion||'').substring(0,500),
     estado: 'Creada',
+    tipo_empleado: d.tipo_empleado||'',
     form_data: formJson
   });
   return result;
@@ -511,6 +540,7 @@ function getFormData(){
     unidad: document.getElementById('f-unidad').value.trim(),
     cedula: document.getElementById('f-cedula').value.trim(),
     tiempo_adm: document.getElementById('f-tiempo').value.trim(),
+    tipo_empleado: document.getElementById('f-tipo-empleado') ? document.getElementById('f-tipo-empleado').value : '',
     naturaleza: document.querySelector('input[name="nat"]:checked') ? document.querySelector('input[name="nat"]:checked').value : '',
     motivacion: document.getElementById('f-motiv').value.trim(),
     directora: document.getElementById('f-firma').value.trim(),
@@ -525,6 +555,7 @@ function showSt(id,msg,tipo){
 async function genFormPDF(){
   const d=getFormData();
   if(!d.nombre){showSt('st-form','Aviso: El nombre del empleado es requerido.','err');return;}
+  if(!d.tipo_empleado){showSt('st-form','Aviso: Debes seleccionar el tipo de empleado (Fijo, Temporal, Carácter Eventual o Compensación Seguridad).','err');return;}
   if(!d.motivacion){showSt('st-form','Aviso: La motivación es requerida.','err');return;}
   if(SESSION && SESSION.rol==='vacperm' && VAC_PERM_KEYS.indexOf(d.naturaleza)<0){
     showSt('st-form','Aviso: No tienes permiso para crear acciones de esta naturaleza.','err');return;
@@ -559,9 +590,11 @@ const COLS=[
   {key:'cedula',label:'Cédula'},
   {key:'tiempo_adm',label:'Tiempo Adm. Pública'},
   {key:'naturaleza',label:'Código de Acción'},
+  {key:'tipo_empleado',label:'Tipo Empleado'},
   {key:'motivacion',label:'Motivación'},
   {key:'directora',label:'Firma / Responsable'},
 ];
+const TIPOS_VALIDOS='Fijo, Temporal, Caracter_Eventual, Compensacion_Seguridad';
 const KEYS_VALIDAS=ACCIONES.reduce(function(acc,g){return acc.concat(g.items.map(function(it){return it.key;}));},[]).join(', ');
 let excelData=[];
 
@@ -571,15 +604,17 @@ function dlPlantilla(){
     ['=== INSTRUCCIONES ==='],
     ['Llena desde la fila 3. Una fila por empleado.'],
     ['Codigos validos para Codigo de Accion:'],
-    [KEYS_VALIDAS],[''],
+    [KEYS_VALIDAS],
+    ['Valores validos para Tipo Empleado:'],
+    [TIPOS_VALIDOS],[''],
     COLS.map(function(c){return c.label;}),
     ['HILLARY YSABEL DE PENA MARTINEZ','29/05/2025','GESTOR DE PROTOCOLO','RD$ 50,000.00',
      'DIRECTOR(A) DE COMUNICACIONES','10/05/2025','DIVISION DE EVENTOS Y PROTOCOLO',
-     '402-1394237-4','','nom_ord',
+     '402-1394237-4','','nom_ord','Fijo',
      'Inclusion en la nomina FIJO, con efectividad al 10/05/2025.','Directora de Recursos Humanos']
   ];
   const ws=XLSX.utils.aoa_to_sheet(wsData);
-  ws['!cols']=COLS.map(function(_,i){return {wch:i===10?70:i===0?42:22};});
+  ws['!cols']=COLS.map(function(_,i){return {wch:i===11?70:i===0?42:22};});
   XLSX.utils.book_append_sheet(wb,ws,'Acciones');
   XLSX.writeFile(wb,'Plantilla_Accion_Personal_PROPEEP.xlsx');
 }
@@ -605,6 +640,8 @@ function loadExcel(file){
         .map(function(row){
           const obj={};
           COLS.forEach(function(col,i){ obj[col.key]=DATE_KEYS[col.key]?excelDateToStr(row[i]):String(row[i]||'').trim(); });
+          // Normalizar tipo_empleado a uno de los valores válidos
+          obj.tipo_empleado = normalizarTipoEmpleado(obj.tipo_empleado);
           return obj;
         }).filter(function(d){return d.nombre;});
       if(!excelData.length){ showSt('st-lote','No se encontraron filas de datos válidas.','err'); document.getElementById('prev-section').style.display='none'; return; }
@@ -629,13 +666,21 @@ function natSelectHtml(idx,currentKey){
 function renderPrev(){
   const cols=['nombre','fecha','cargo','sueldo','cedula'];
   const lbls=['Nombre','Fecha','Cargo','Sueldo','Cédula'];
-  let html='<table><thead><tr>'+lbls.map(function(l){return '<th>'+l+'</th>';}).join('')+'<th>Naturaleza de la Acción *</th></tr></thead><tbody>';
+  let html='<table><thead><tr>'+lbls.map(function(l){return '<th>'+l+'</th>';}).join('')+'<th>Naturaleza de la Acción *</th><th>Tipo de Empleado</th></tr></thead><tbody>';
   excelData.forEach(function(d,i){
-    html+='<tr>'+cols.map(function(k){return '<td>'+(d[k]||'—')+'</td>';}).join('')+'<td>'+natSelectHtml(i,d.naturaleza)+'</td></tr>';
+    html+='<tr>'+cols.map(function(k){return '<td>'+(d[k]||'—')+'</td>';}).join('')+'<td>'+natSelectHtml(i,d.naturaleza)+'</td><td>'+tipoSelectHtml(i,d.tipo_empleado)+'</td></tr>';
   });
   html+='</tbody></table>';
   document.getElementById('prev-table').innerHTML=html;
   document.getElementById('prev-count').textContent='('+excelData.length+' empleados)';
+}
+
+function tipoSelectHtml(idx, current){
+  var opts='<option value="">— Seleccionar —</option>';
+  [['Fijo','Fijo'],['Temporal','Temporal'],['Caracter_Eventual','Carácter Eventual'],['Compensacion_Seguridad','Compensación Seguridad']].forEach(function(t){
+    opts+='<option value="'+t[0]+'"'+(t[0]===current?' selected':'')+'>'+t[1]+'</option>';
+  });
+  return '<select onchange="excelData['+idx+'].tipo_empleado=this.value" style="min-width:150px;font-size:11.5px;padding:4px 6px;border:1.5px solid var(--borde);border-radius:4px;font-family:inherit">'+opts+'</select>';
 }
 
 function clearExcel(){ excelData=[]; document.getElementById('prev-section').style.display='none'; document.getElementById('fi').value=''; }
@@ -644,6 +689,8 @@ async function genLote(){
   if(!excelData.length) return;
   const sinNat=excelData.filter(function(d){return !d.naturaleza;});
   if(sinNat.length>0){ showSt('st-lote','Aviso: '+sinNat.length+' fila(s) sin naturaleza de acción.','err'); return; }
+  const sinTipo=excelData.filter(function(d){return !d.tipo_empleado;});
+  if(sinTipo.length>0){ showSt('st-lote','Aviso: '+sinTipo.length+' fila(s) sin tipo de empleado.','err'); return; }
   const btn=document.getElementById('btn-lote');
   btn.disabled=true;
   const pw=document.getElementById('prog-wrap'), pb=document.getElementById('prog-bar');
@@ -745,7 +792,27 @@ function renderResumen(){
     html += '<span style="color:#fff;font-weight:700">Neto: RD$'+mesNeto.toLocaleString('es-DO')+'</span>';
     html += '</div></div>';
     html += '<div id="mes-'+mes+'" class="mes-body">';
-    html += '<div class="table-wrap"><table><thead><tr><th>Empleado</th><th>Cédula</th><th>Cargo</th><th>Sueldo</th><th>Naturaleza</th><th>Estado</th><th>Signo</th></tr></thead><tbody>';
+    // Desglose por tipo de empleado dentro del mes
+    var tipos = {Fijo:{n:0,pos:0,neg:0},Temporal:{n:0,pos:0,neg:0},Caracter_Eventual:{n:0,pos:0,neg:0},Compensacion_Seguridad:{n:0,pos:0,neg:0},'':{n:0,pos:0,neg:0}};
+    rows.forEach(function(r){
+      var t = r.tipo_empleado||'';
+      if(!tipos[t]) t='';
+      var signo = natSigno(r.naturaleza||'');
+      var monto = parseMonto(r.sueldo||'');
+      tipos[t].n++;
+      if(signo>0) tipos[t].pos+=monto; else if(signo<0) tipos[t].neg+=monto;
+    });
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:var(--gris);border-radius:var(--radio);margin-bottom:10px">';
+    [['Fijo','Fijo'],['Temporal','Temporal'],['Caracter_Eventual','Caráct. Event.'],['Compensacion_Seguridad','Comp. Seg.'],['','Sin tipo']].forEach(function(tp){
+      var d = tipos[tp[0]];
+      if(d.n===0) return;
+      html += '<div style="font-size:11px;padding:6px 10px;background:#fff;border:1px solid var(--gris2);border-radius:6px">';
+      html += '<strong style="color:var(--azul)">'+tp[1]+'</strong>: '+d.n+' acción(es) · ';
+      html += '<span class="monto-pos">▲'+d.pos.toLocaleString('es-DO')+'</span> · ';
+      html += '<span class="monto-neg">▼'+d.neg.toLocaleString('es-DO')+'</span></div>';
+    });
+    html += '</div>';
+    html += '<div class="table-wrap"><table><thead><tr><th>Empleado</th><th>Cédula</th><th>Cargo</th><th>Tipo</th><th>Sueldo</th><th>Naturaleza</th><th>Estado</th><th>Signo</th></tr></thead><tbody>';
     rows.forEach(function(r){
       const signo = natSigno(r.naturaleza||'');
       const signoHtml = signo>0 ? '<span class="monto-pos">▲ Positivo</span>' : signo<0 ? '<span class="monto-neg">▼ Negativo</span>' : '<span class="monto-neu">○ Neutro</span>';
@@ -754,6 +821,7 @@ function renderResumen(){
       html += '<td><strong>'+(r.nombre_empleado||'—')+'</strong></td>';
       html += '<td>'+(fmtCed(r.cedula_empleado)||'—')+'</td>';
       html += '<td>'+(r.cargo||'—')+'</td>';
+      html += '<td>'+tipoEmpLabel(r.tipo_empleado||'')+'</td>';
       html += '<td>'+(r.sueldo||'—')+'</td>';
       html += '<td>'+(r.naturaleza||'—')+'</td>';
       html += '<td><span class="est-badge est-'+est.replace(/\s/g,'')+'">'+est+'</span></td>';

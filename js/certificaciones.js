@@ -688,6 +688,7 @@ function exportarExcel(){
   if(!histData.length){ alert('No hay registros para exportar.'); return; }
   const search = (document.getElementById('hist-search').value||'').toLowerCase();
   const estFilt = document.getElementById('hist-est').value;
+  const tipoFilt = document.getElementById('hist-tipo') ? document.getElementById('hist-tipo').value : '';
   const rol = SESSION ? SESSION.rol : '';
 
   let base = histData;
@@ -699,13 +700,14 @@ function exportarExcel(){
     const cedula = ((r.cedula_empleado||'')+' '+fmtCed(r.cedula_empleado)).toLowerCase();
     const est = r.estado||'Creada';
     if(estFilt && est !== estFilt) return false;
+    if(tipoFilt && (r.tipo_empleado||'') !== tipoFilt) return false;
     if(search && nombre.indexOf(search)<0 && cedula.indexOf(search)<0) return false;
     return true;
   });
 
   if(!filtered.length){ alert('No hay registros visibles para exportar.'); return; }
 
-  const headers = ['Fecha','Generado Por','Empleado','Cédula','Cargo','Sueldo','Naturaleza','Motivación','Estado'];
+  const headers = ['Fecha','Generado Por','Empleado','Cédula','Cargo','Tipo Empleado','Sueldo','Naturaleza','Motivación','Estado'];
   const rows = filtered.map(function(r){
     return [
       r.fecha_generacion||'',
@@ -713,6 +715,7 @@ function exportarExcel(){
       r.nombre_empleado||'',
       fmtCed(r.cedula_empleado),
       r.cargo||'',
+      tipoEmpLabel(r.tipo_empleado||''),
       r.sueldo||'',
       r.naturaleza||'',
       r.motivacion||'',

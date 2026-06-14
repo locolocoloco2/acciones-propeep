@@ -141,7 +141,16 @@
       <div><label>7. Fecha de Ingreso</label><input type="date" id="f-ingreso"></div>
       <div><label>8. Unidad de Trabajo</label><input type="text" id="f-unidad" placeholder="DIVISIÓN DE EVENTOS Y PROTOCOLO"></div>
       <div><label>9. Cédula</label><input type="text" id="f-cedula" placeholder="402-1394237-4"></div>
-      <div class="span2"><label>10. Tiempo en la Adm. Pública</label><input type="text" id="f-tiempo" placeholder="Ej: 2 años 3 meses"></div>
+      <div><label>10. Tiempo en la Adm. Pública</label><input type="text" id="f-tiempo" placeholder="Ej: 2 años 3 meses"></div>
+      <div><label>11. Tipo de Empleado *</label>
+        <select id="f-tipo-empleado">
+          <option value="">— Seleccionar —</option>
+          <option value="Fijo">Fijo</option>
+          <option value="Temporal">Temporal</option>
+          <option value="Caracter_Eventual">Carácter Eventual</option>
+          <option value="Compensacion_Seguridad">Compensación Seguridad</option>
+        </select>
+      </div>
     </div>
   </div>
   <div class="card">
@@ -213,6 +222,13 @@
         <option value="Creada">Creada</option>
         <option value="Aplicada">Aplicada</option>
         <option value="Rechazada">Rechazada</option>
+      </select>
+      <select id="hist-tipo" onchange="renderHist()">
+        <option value="">Todos los tipos</option>
+        <option value="Fijo">Fijo</option>
+        <option value="Temporal">Temporal</option>
+        <option value="Caracter_Eventual">Carácter Eventual</option>
+        <option value="Compensacion_Seguridad">Compensación Seguridad</option>
       </select>
       <button class="btn btn-outline" onclick="loadHist()">Actualizar</button>
       <button class="btn btn-success" onclick="exportarExcel()">Exportar Excel</button>
