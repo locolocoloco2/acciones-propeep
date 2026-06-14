@@ -533,7 +533,7 @@ async function genFormPDF(){
   makePDF(d).save(fname);
   showSt('st-form','PDF descargado. Registrando en base de datos...','info');
   await registrarAccion(d);
-  showSt('st-form','PDF descargado y guardado. Puedes re-descargarlo desde el Histórico mientras esté en estado <strong>Creada</strong>.','ok');
+  showSt('st-form','PDF descargado y guardado. Puedes re-descargarlo desde el Histórico mientras esté en estado "Creada".','ok');
 }
 
 function limpiarForm(){
