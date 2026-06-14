@@ -133,6 +133,8 @@ function applyRoleUI(){
   if(tabRep) tabRep.style.display = _isV ? '' : 'none';
   const tabNP = document.getElementById('tab-nominapdf');
   if(tabNP) tabNP.style.display = _isV ? '' : 'none';
+  const tabCM = document.getElementById('tab-cargamomina');
+  if(tabCM) tabCM.style.display = _isV ? '' : 'none';
   if(typeof mostrarBotonConfig === 'function') mostrarBotonConfig(_isV);
   // Ocultar secciones del menú sin módulos visibles
   document.querySelectorAll('.nav-section').forEach(function(sec){
@@ -171,7 +173,7 @@ function closeSidebar(){
 }
 function switchTab(t){
   closeSidebar();
-  ['form','lote','hist','cert','certhist','isr','reporte','nominapdf','regalia','resumen'].forEach(function(id){
+  ['form','lote','hist','cert','certhist','isr','reporte','nominapdf','cargamomina','regalia','resumen'].forEach(function(id){
     const tab = document.getElementById('tab-'+id);
     const panel = document.getElementById('panel-'+id);
     if(tab) tab.classList.toggle('active', id===t);
@@ -201,6 +203,8 @@ function enterApp(found){
   loadHist();
   // Recargar configuración compartida desde la base de datos
   if(typeof cargarConfigBD === 'function') cargarConfigBD();
+  // Cargar nómina viva desde Supabase (para el buscador de empleados)
+  if(typeof cargarNominaLive === 'function') cargarNominaLive();
 }
 
 function saveSession(){

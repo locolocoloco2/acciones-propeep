@@ -1,9 +1,42 @@
 
+// Nómina dinámica desde Supabase (reemplaza la constante NOMINA cuando está cargada)
+var NOMINA_LIVE = null;
+
+function getNomina(){
+  return (NOMINA_LIVE && NOMINA_LIVE.length) ? NOMINA_LIVE : NOMINA;
+}
+
+// Carga la nómina desde Supabase (tabla nomina_mayo2026)
+async function cargarNominaLive(){
+  try{
+    var r = await fetch(SUPA_URL+'/rest/v1/nomina_mayo2026?select=cedula,nombre,sexo,puesto,departamento,sueldo,fecha_ingreso&order=nombre.asc&limit=5000', {headers: SUPA_HEADERS});
+    if(r.ok){
+      var data = await r.json();
+      if(data && data.length){
+        NOMINA_LIVE = data.map(function(e){
+          return {
+            cedula: String(e.cedula||'').replace(/[^0-9]/g,''),
+            nombre: e.nombre||'',
+            sexo: e.sexo||'',
+            puesto: e.puesto||'',
+            departamento: e.departamento||'',
+            sueldo: e.sueldo||0,
+            fecha_ingreso: e.fecha_ingreso||'',
+            grupo: e.grupo||'',
+          };
+        });
+        return true;
+      }
+    }
+  }catch(e){ console.warn('cargarNominaLive', e); }
+  return false;
+}
+
 function buscarEmpleado(){
   const q = (document.getElementById('cert-buscar').value||'').trim().toLowerCase();
   const sug = document.getElementById('cert-sugerencias');
   if(q.length < 2){ sug.innerHTML=''; return; }
-  const found = NOMINA.filter(function(e){
+  const found = getNomina().filter(function(e){
     const qd=q.replace(/[^0-9]/g,''); return (qd && e.cedula.indexOf(qd)>=0) || e.nombre.toLowerCase().indexOf(q)>=0;
   }).slice(0,8);
   if(!found.length){ sug.innerHTML='<div class="cert-sug"><div class="cert-sug-item" style="color:#9e1b32">No se encontró ningún empleado</div></div>'; return; }
@@ -16,7 +49,7 @@ function buscarEmpleado(){
 }
 
 function seleccionarEmpleado(cedula){
-  const e = NOMINA.find(function(x){ return x.cedula===cedula; });
+  const e = getNomina().find(function(x){ return x.cedula===cedula; });
   if(!e) return;
   document.getElementById('cert-buscar').value = e.nombre;
   document.getElementById('cert-sugerencias').innerHTML = '';
@@ -524,7 +557,7 @@ async function generarCertificacion(){
 
   // Update nomina if data was modified
   const _cedDig = String(d.cedula||'').replace(/[^0-9]/g,'');
-  const original = NOMINA.find(function(e){ return e.cedula===_cedDig; });
+  const original = getNomina().find(function(e){ return e.cedula===_cedDig; });
   if(original){
     const sueldoNum = parseFloat(String(d.sueldo).replace(/[^0-9.]/g,''))||0;
     if(original.nombre!==d.nombre || original.puesto!==d.cargo || original.departamento!==d.departamento || original.sueldo!==sueldoNum || original.fecha_ingreso!==d.fecha_ingreso){
