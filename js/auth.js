@@ -41,6 +41,7 @@ async function doLogin(){
             .select('cedula,nombre,rol').eq('id', sess.user.id).single();
           if(!ePerf && perfil){
             const found = { cedula: perfil.cedula, nombre: perfil.nombre, rol: perfil.rol };
+            await refrescarHeadersAuth();  // poner el token en SUPA_HEADERS antes de usar tablas
             restoreBtn(btnEl);
             enterApp(found);
             saveSession();
@@ -215,6 +216,10 @@ function restoreSession(){
     if(!s || !s.u || Date.now() > s.exp){ localStorage.removeItem(SESSION_KEY); return false; }
     SESSION = s.u;
     saveSession();
+    // Restaurar token de Supabase en los headers (async, pero la sesión de Supabase ya persiste)
+    if(typeof refrescarHeadersAuth === 'function'){
+      refrescarHeadersAuth().then(function(){ if(typeof loadHist==='function') loadHist(); });
+    }
     return true;
   }catch(e){ return false; }
 }

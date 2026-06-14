@@ -7,11 +7,29 @@ const _SS=42;
 function _dec(a,s){return a.map(function(b,i){return String.fromCharCode(b^(s+i%7));}).join('');}
 const SUPA_URL=_dec(_SU,_SS);
 const SUPA_KEY=_dec(_SK,_SS);
-const SUPA_HEADERS = {
+// Headers para REST. El Authorization se actualiza con el token de sesión tras login.
+var SUPA_HEADERS = {
   'Content-Type': 'application/json',
   'apikey': SUPA_KEY,
   'Authorization': 'Bearer ' + SUPA_KEY
 };
+
+// Actualiza SUPA_HEADERS con el token de la sesión actual (llamar tras login y al restaurar sesión)
+async function refrescarHeadersAuth(){
+  try{
+    var c = getSupa();
+    if(c){
+      var { data } = await c.auth.getSession();
+      if(data && data.session && data.session.access_token){
+        SUPA_HEADERS['Authorization'] = 'Bearer ' + data.session.access_token;
+        return true;
+      }
+    }
+  }catch(e){ console.warn('refrescarHeadersAuth', e); }
+  // Sin sesión: volver a la anon key
+  SUPA_HEADERS['Authorization'] = 'Bearer ' + SUPA_KEY;
+  return false;
+}
 
 // Cliente de Supabase (para Auth + RLS). Se crea cuando la librería esté cargada.
 var supaClient = null;
