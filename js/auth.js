@@ -17,17 +17,64 @@ function fmtCedula(inp){
   inp.value = out;
 }
 
-function doLogin(){
+async function doLogin(){
   const raw = document.getElementById('login-cedula').value.replace(/-/g,'').trim();
-  const users = _getUsers();
-  const found = users.find(u => u.cedula === raw);
-  if(found){
-    enterApp(found);
-    saveSession();
-  } else {
-    document.getElementById('login-err').style.display = 'block';
+  const errEl = document.getElementById('login-err');
+  const btnEl = document.getElementById('login-btn');
+  if(!raw){ if(errEl){ errEl.textContent='Ingresa tu cédula.'; errEl.style.display='block'; } return; }
+
+  // Estado "cargando"
+  if(btnEl){ btnEl.disabled = true; btnEl.dataset.txt = btnEl.textContent; btnEl.textContent = 'Verificando...'; }
+  if(errEl) errEl.style.display = 'none';
+
+  try{
+    const c = getSupa();
+    if(c){
+      // 1) Resolver correo a partir de la cédula
+      const { data: correo, error: eCorreo } = await c.rpc('correo_por_cedula', { p_cedula: raw });
+      if(!eCorreo && correo){
+        // 2) Iniciar sesión en Supabase Auth (correo + cédula como contraseña)
+        const { data: sess, error: eAuth } = await c.auth.signInWithPassword({ email: correo, password: raw });
+        if(!eAuth && sess && sess.user){
+          // 3) Obtener el perfil (nombre, rol, cédula)
+          const { data: perfil, error: ePerf } = await c.from('perfiles')
+            .select('cedula,nombre,rol').eq('id', sess.user.id).single();
+          if(!ePerf && perfil){
+            const found = { cedula: perfil.cedula, nombre: perfil.nombre, rol: perfil.rol };
+            restoreBtn(btnEl);
+            enterApp(found);
+            saveSession();
+            return;
+          }
+        }
+      }
+    }
+    // ── Respaldo local (si no hay internet o Supabase falla) ──
+    const users = _getUsers();
+    const found = users.find(u => u.cedula === raw);
+    if(found){
+      restoreBtn(btnEl);
+      enterApp(found);
+      saveSession();
+      return;
+    }
+    // Falló todo
+    restoreBtn(btnEl);
+    if(errEl){ errEl.textContent = 'Cédula no autorizada. Acceso denegado.'; errEl.style.display = 'block'; }
     document.getElementById('login-cedula').value = '';
+  }catch(err){
+    console.warn('doLogin error', err);
+    // Intentar respaldo local ante cualquier excepción
+    const users = _getUsers();
+    const found = users.find(u => u.cedula === raw);
+    restoreBtn(btnEl);
+    if(found){ enterApp(found); saveSession(); return; }
+    if(errEl){ errEl.textContent = 'No se pudo verificar. Revisa tu conexión e intenta de nuevo.'; errEl.style.display = 'block'; }
   }
+}
+
+function restoreBtn(btnEl){
+  if(btnEl){ btnEl.disabled = false; if(btnEl.dataset.txt) btnEl.textContent = btnEl.dataset.txt; }
 }
 
 function applyRoleUI(){
@@ -174,6 +221,8 @@ function restoreSession(){
 
 function clearSession(){
   try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+  // Cerrar sesión en Supabase Auth también
+  try{ var c = getSupa(); if(c) c.auth.signOut(); }catch(e){}
 }
 
 document.addEventListener('click', function(){ if(SESSION) saveSession(); });

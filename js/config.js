@@ -13,6 +13,35 @@ const SUPA_HEADERS = {
   'Authorization': 'Bearer ' + SUPA_KEY
 };
 
+// Cliente de Supabase (para Auth + RLS). Se crea cuando la librería esté cargada.
+var supaClient = null;
+function getSupa(){
+  if(supaClient) return supaClient;
+  if(window.supabase && window.supabase.createClient){
+    supaClient = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, storageKey: 'propeep_supa_auth' }
+    });
+  }
+  return supaClient;
+}
+
+// Headers autenticados para llamadas REST manuales (usa el token de sesión si existe)
+async function supaAuthHeaders(){
+  var base = { 'Content-Type':'application/json', 'apikey': SUPA_KEY };
+  try{
+    var c = getSupa();
+    if(c){
+      var { data } = await c.auth.getSession();
+      if(data && data.session && data.session.access_token){
+        base['Authorization'] = 'Bearer ' + data.session.access_token;
+        return base;
+      }
+    }
+  }catch(e){}
+  base['Authorization'] = 'Bearer ' + SUPA_KEY;
+  return base;
+}
+
 // ══════════════════════════════════════════
 // CREDENCIALES (mismo esquema original)
 // ══════════════════════════════════════════
