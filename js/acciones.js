@@ -693,6 +693,8 @@ function natSigno(natStr){
 
 function renderResumen(){
   const year = parseInt(document.getElementById('res-year').value)||new Date().getFullYear();
+  const monthSel = document.getElementById('res-month');
+  const monthFilter = monthSel ? (parseInt(monthSel.value)||0) : 0; // 0 = todos los meses
   if(!histData.length){
     document.getElementById('resumen-body').innerHTML = '<div class="hist-loading">No hay registros.</div>';
     return;
@@ -705,12 +707,15 @@ function renderResumen(){
     const yy = parseInt(parts[2]);
     const mm = parseInt(parts[1]);
     if(yy !== year) return;
+    if(monthFilter && mm !== monthFilter) return;  // filtrar por mes si está seleccionado
     if(!byMonth[mm]) byMonth[mm] = [];
     byMonth[mm].push(r);
   });
+  const MESES_F=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const keys = Object.keys(byMonth).map(Number).sort(function(a,b){return a-b;});
   if(!keys.length){
-    document.getElementById('resumen-body').innerHTML = '<div class="hist-loading">Sin registros para '+year+'.</div>';
+    const periodo = monthFilter ? (MESES_F[monthFilter]+' de '+year) : String(year);
+    document.getElementById('resumen-body').innerHTML = '<div class="hist-loading">Sin registros para '+periodo+'.</div>';
     return;
   }
   const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];

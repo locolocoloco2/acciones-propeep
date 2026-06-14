@@ -336,6 +336,21 @@
     <div class="card-title">Resumen de Acciones por Mes</div>
     <div class="filtros">
       <select id="res-year" onchange="renderResumen()" style="max-width:120px;"></select>
+      <select id="res-month" onchange="renderResumen()" style="max-width:160px;">
+        <option value="0">Todos los meses</option>
+        <option value="1">Enero</option>
+        <option value="2">Febrero</option>
+        <option value="3">Marzo</option>
+        <option value="4">Abril</option>
+        <option value="5">Mayo</option>
+        <option value="6">Junio</option>
+        <option value="7">Julio</option>
+        <option value="8">Agosto</option>
+        <option value="9">Septiembre</option>
+        <option value="10">Octubre</option>
+        <option value="11">Noviembre</option>
+        <option value="12">Diciembre</option>
+      </select>
       <button class="btn btn-outline" onclick="loadHist()">Actualizar</button>
     </div>
     <div id="resumen-body" class="hist-loading">Cargando...</div>
